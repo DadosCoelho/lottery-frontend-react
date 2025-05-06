@@ -1,0 +1,46 @@
+# Dependências
+node_modules/
+
+# Arquivos de build
+dist/
+dist-ssr/
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+
+# Arquivos de cache
+.vite/
+.cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Arquivos de IDE/Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários
+*.bak
+*.swp
+*.tmp
+
+# Outros gerenciadores de pacotes
+yarn.lock
+pnpm-lock.yaml
+
+# Testes e cobertura
+coverage/
