@@ -1,23 +1,31 @@
 import React, { useState } from 'react';
-import { apiRequest } from '../services/api';
-import { firebase } from '../services/firebase';
+import { authService } from '../services/api';
 
-export const Login = ({ setPage, setError }) => {
+export const Login = ({ setPage, setError, setUser }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        console.log('Tentando login com:', email);
+        setIsLoading(true);
+        
         try {
-            const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-            console.log('Login bem-sucedido para:', userCredential.user.email);
-            const idToken = await userCredential.user.getIdToken();
-            await apiRequest('/auth/login', 'POST', { idToken });
+            console.log('Tentando login com:', email);
+            // Chama a API para fazer login
+            const response = await authService.login(email, password);
+            console.log('Login bem-sucedido para:', email);
+            
+            // Atualiza estado do usuário no componente App
+            setUser(response.user);
+            setPage('profile');
+            
+            setIsLoading(false);
         } catch (err) {
             console.error('Erro de login:', err);
             setError(err.message);
+            setIsLoading(false);
         }
     };
 
@@ -33,6 +41,7 @@ export const Login = ({ setPage, setError }) => {
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         required
+                        disabled={isLoading}
                     />
                 </div>
                 <div className="form-group">
@@ -44,9 +53,12 @@ export const Login = ({ setPage, setError }) => {
                         onChange={e => setPassword(e.target.value)}
                         required
                         minLength="8"
+                        disabled={isLoading}
                     />
                 </div>
-                <button type="submit" className="btn-primary">Entrar</button>
+                <button type="submit" className="btn-primary" disabled={isLoading}>
+                    {isLoading ? 'Processando...' : 'Entrar'}
+                </button>
             </form>
             <p style={{ textAlign: 'center', marginTop: '1rem' }}>
                 Não tem conta?{' '}

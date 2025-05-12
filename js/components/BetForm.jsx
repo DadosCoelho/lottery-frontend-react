@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { apiRequest } from '../services/api';
-import { firebase } from '../services/firebase';
 
 export const BetForm = ({ user, setError }) => {
     const [modality, setModality] = useState('Mega-Sena');
@@ -8,6 +7,7 @@ export const BetForm = ({ user, setError }) => {
     const [clovers, setClovers] = useState([]);
     const [initialContest, setInitialContest] = useState('');
     const [finalContest, setFinalContest] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const validateNumbers = () => {
         if (modality === 'Mega-Sena') {
@@ -32,24 +32,30 @@ export const BetForm = ({ user, setError }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        
         if (!validateNumbers()) {
             setError('Números ou trevos inválidos para a modalidade selecionada');
             return;
         }
+        
+        setIsLoading(true);
+        
         try {
-            const token = await firebase.auth().currentUser.getIdToken(true);
             const result = await apiRequest('/bet/create', 'POST', {
                 modality,
                 initial_contest: initialContest,
                 final_contest: finalContest,
                 numbers,
                 clovers
-            }, token);
+            });
+            
             setError('Aposta criada com sucesso!', 'success');
             console.log('Aposta criada:', result);
+            setIsLoading(false);
         } catch (err) {
             console.error('Erro ao criar aposta:', err);
             setError(err.message);
+            setIsLoading(false);
         }
     };
 
@@ -59,7 +65,12 @@ export const BetForm = ({ user, setError }) => {
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
                     <label htmlFor="modality">Modalidade</label>
-                    <select id="modality" value={modality} onChange={e => setModality(e.target.value)}>
+                    <select 
+                        id="modality" 
+                        value={modality} 
+                        onChange={e => setModality(e.target.value)}
+                        disabled={isLoading}
+                    >
                         <option value="Mega-Sena">Mega-Sena</option>
                         <option value="+Milionária">+Milionária</option>
                         <option value="Lotofácil">Lotofácil</option>
@@ -75,6 +86,7 @@ export const BetForm = ({ user, setError }) => {
                         value={numbers.join(',')}
                         onChange={e => setNumbers(e.target.value.split(',').map(Number).filter(n => !isNaN(n)))}
                         required
+                        disabled={isLoading}
                     />
                 </div>
                 {modality === '+Milionária' && (
@@ -86,6 +98,7 @@ export const BetForm = ({ user, setError }) => {
                             value={clovers.join(',')}
                             onChange={e => setClovers(e.target.value.split(',').map(Number).filter(n => !isNaN(n)))}
                             required
+                            disabled={isLoading}
                         />
                     </div>
                 )}
@@ -97,6 +110,7 @@ export const BetForm = ({ user, setError }) => {
                         value={initialContest}
                         onChange={e => setInitialContest(e.target.value)}
                         required
+                        disabled={isLoading}
                     />
                 </div>
                 <div className="form-group">
@@ -107,9 +121,12 @@ export const BetForm = ({ user, setError }) => {
                         value={finalContest}
                         onChange={e => setFinalContest(e.target.value)}
                         required
+                        disabled={isLoading}
                     />
                 </div>
-                <button type="submit" className="btn-primary">Criar Aposta</button>
+                <button type="submit" className="btn-primary" disabled={isLoading}>
+                    {isLoading ? 'Processando...' : 'Criar Aposta'}
+                </button>
             </form>
         </div>
     );

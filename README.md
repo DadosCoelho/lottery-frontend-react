@@ -62,3 +62,39 @@ MIT License.
 Contato
 Email: seu-email@example.com
 GitHub: <seu-usuario>
+
+## Novo Sistema de Autenticação (v2.0)
+
+### Alterações Importantes
+
+Na versão 2.0, a aplicação usa um sistema de autenticação completamente baseado na API, sem comunicação direta entre o frontend e o Firebase. Principais mudanças:
+
+1. Frontend se comunica apenas com a API Node.js
+2. API gerencia toda a autenticação e comunicação com o Firebase
+3. Credenciais (senhas) são armazenadas de forma segura no Realtime Database
+
+### Como Executar a Migração
+
+Se você está atualizando de uma versão anterior, execute o script de migração para criar credenciais para usuários existentes:
+
+```bash
+cd api
+node scripts/migrate_users.js
+```
+
+### Desenvolvimento
+
+Para iniciar o servidor de desenvolvimento:
+
+```bash
+# Terminal 1 - Backend
+cd api
+npm install
+npm run dev
+
+# Terminal 2 - Frontend
+npm install
+npm run dev
+```
+
+O sistema agora funciona com tokens JWT armazenados no localStorage, que são enviados em cada requisição para a API.

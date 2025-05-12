@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { apiRequest } from '../services/api';
-import { firebase } from '../services/firebase';
+import { authService } from '../services/api';
 
-export const Register = ({ setPage, setError }) => {
+export const Register = ({ setPage, setError, setUser }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [passwordError, setPasswordError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const validatePassword = (pwd) => {
         if (pwd.length < 8) return 'A senha deve ter pelo menos 8 caracteres';
@@ -18,22 +18,34 @@ export const Register = ({ setPage, setError }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        
         const pwdError = validatePassword(password);
         if (pwdError) {
             setPasswordError(pwdError);
             return;
         }
+        
         if (name.length < 2) {
             setError('O nome deve ter pelo menos 2 caracteres');
             return;
         }
+        
+        setIsLoading(true);
+        
         try {
-            await apiRequest('/auth/register', 'POST', { email, password, name });
-            console.log('Registro bem-sucedido');
-            await firebase.auth().signInWithEmailAndPassword(email, password);
+            // Faz o registro através da API
+            const response = await authService.register(name, email, password);
+            console.log('Registro bem-sucedido:', response);
+            
+            // Atualiza estado do usuário no componente App
+            setUser(response.user);
+            setPage('profile');
+            
+            setIsLoading(false);
         } catch (err) {
             console.error('Erro de registro:', err);
             setError(err.message);
+            setIsLoading(false);
         }
     };
 
@@ -50,6 +62,7 @@ export const Register = ({ setPage, setError }) => {
                         onChange={e => setName(e.target.value)}
                         required
                         minLength="2"
+                        disabled={isLoading}
                     />
                 </div>
                 <div className="form-group">
@@ -60,6 +73,7 @@ export const Register = ({ setPage, setError }) => {
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         required
+                        disabled={isLoading}
                     />
                 </div>
                 <div className="form-group">
@@ -74,10 +88,13 @@ export const Register = ({ setPage, setError }) => {
                         }}
                         required
                         minLength="8"
+                        disabled={isLoading}
                     />
                     {passwordError && <p className="error">{passwordError}</p>}
                 </div>
-                <button type="submit" className="btn-primary">Registrar</button>
+                <button type="submit" className="btn-primary" disabled={isLoading}>
+                    {isLoading ? 'Processando...' : 'Registrar'}
+                </button>
             </form>
             <p style={{ textAlign: 'center', marginTop: '1rem' }}>
                 Já tem conta?{' '}
