@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Award, Archive, Search, Calendar, BarChart, X, Plus, Ticket, CheckSquare, AlertCircle, Users, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getLotteryGames } from '../services/api';
-import { LotteryGame } from '../types';
+import { LotteryGame, Bet, BetResult } from '../types';
 import httpService from '../services/httpService';
 
 const DashboardPage: React.FC = () => {
@@ -44,7 +44,9 @@ const DashboardPage: React.FC = () => {
 
   // Formatação da data para exibir quando o usuário foi registrado
   const formattedDate = () => {
-    return new Date().toLocaleDateString('pt-BR', {
+    // Se o user.profile.createdAt existir, use-o, caso contrário, use a data atual
+    const dateToFormat = user?.profile?.createdAt ? new Date(user.profile.createdAt) : new Date();
+    return dateToFormat.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -91,33 +93,38 @@ const DashboardPage: React.FC = () => {
     setError(null);
   };
 
-  // Adicionar participante
+  // Adicionar participante (MODIFICADO)
   const addParticipant = () => {
-    if (!newParticipantName || !newParticipantEmail) {
-      setError('Preencha o nome e email do participante');
+    if (!newParticipantName.trim() || !newParticipantEmail.trim()) {
+      setError('Preencha o nome e e-mail do participante.');
       return;
     }
     
-    // Validar formato de email
+    // Validar formato de e-mail
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newParticipantEmail)) {
-      setError('Por favor, insira um email válido');
+      setError('Por favor, insira um e-mail válido.');
       return;
     }
     
-    // Verificar se o email já existe na lista
-    if (participants.some(p => p.email === newParticipantEmail)) {
-      setError('Este email já foi adicionado');
+    // Verificar se o e-mail já existe na lista (incluindo o próprio usuário logado)
+    const currentParticipants = [...participants];
+    if (user?.email && user.email.toLowerCase() === newParticipantEmail.toLowerCase()) {
+      setError('Você já está incluído como participante (o criador é sempre um participante).');
+      return;
+    }
+    if (currentParticipants.some(p => p.email.toLowerCase() === newParticipantEmail.toLowerCase())) {
+      setError('Este e-mail já foi adicionado.');
       return;
     }
     
     // Adicionar novo participante
     setParticipants([
-      ...participants, 
+      ...currentParticipants, 
       {
-        id: Date.now().toString(), // ID temporário
-        name: newParticipantName,
-        email: newParticipantEmail
+        id: Date.now().toString(), // ID temporário para o frontend
+        name: newParticipantName.trim(),
+        email: newParticipantEmail.trim()
       }
     ]);
     
@@ -132,7 +139,7 @@ const DashboardPage: React.FC = () => {
     setParticipants(participants.filter(p => p.id !== id));
   };
 
-  // Submeter o formulário de apostas
+  // Submeter o formulário de apostas (mantido como estava)
   const handleBetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -218,7 +225,7 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // Submeter o formulário de apostas em grupo
+  // Submeter o formulário de apostas em grupo (MODIFICADO)
   const handleGroupBetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -231,8 +238,18 @@ const DashboardPage: React.FC = () => {
         return;
       }
 
-      if (participants.length < 2) {
-        setError('Adicione pelo menos 2 participantes para formar um grupo.');
+      // Preparar a lista completa de participantes para enviar ao backend
+      // Inclui o criador da aposta na lista de participantes se ele ainda não estiver lá
+      const allParticipantsForBackend = [...participants];
+      const creatorEmail = user?.email;
+      const creatorName = user?.profile?.nome || user?.email?.split('@')[0];
+
+      if (creatorEmail && !allParticipantsForBackend.some(p => p.email.toLowerCase() === creatorEmail.toLowerCase())) {
+          allParticipantsForBackend.push({ id: user?.uid || 'temp', name: creatorName || '', email: creatorEmail });
+      }
+
+      if (allParticipantsForBackend.length < 2) {
+        setError('Adicione pelo menos 2 participantes (incluindo você) para formar um grupo.');
         setLoading(false);
         return;
       }
@@ -254,12 +271,14 @@ const DashboardPage: React.FC = () => {
         qtdTeimosinha: isTeimosinha ? parseInt(teimosinhaCount) : 1,
         grupo: {
           nome: groupName,
-          participantes: participants.map(p => ({ nome: p.name, email: p.email })),
-          criador: user?.email || ''
+          // Envia a lista completa de participantes (nomes/e-mails) para o backend.
+          // O backend resolverá os UIDs e os armazenará em `participantesUids`.
+          participantes: allParticipantsForBackend.map(p => ({ nome: p.name, email: p.email })),
+          criador: user?.email || '' // Mantém o e-mail do criador para exibição ou compatibilidade
         }
       };
 
-      console.log('Enviando aposta em grupo:', groupBetData);
+      console.log('[handleGroupBetSubmit] Enviando aposta em grupo:', groupBetData);
       
       // Enviar os dados para a API
       const response = await httpService.post('/bets/group', groupBetData);
@@ -269,20 +288,24 @@ const DashboardPage: React.FC = () => {
         const qtdApostas = isTeimosinha ? parseInt(teimosinhaCount) : 1;
         
         if (isTeimosinha && qtdApostas > 1) {
-          setSuccessMessage(`${qtdApostas} apostas teimosinha em grupo "${groupName}" (${gameName}, começando no concurso #${contestNumber}) registradas com sucesso para ${participants.length} participantes!`);
+          setSuccessMessage(`${qtdApostas} apostas teimosinha em grupo "${groupName}" (${gameName}, começando no concurso #${contestNumber}) registradas com sucesso para ${allParticipantsForBackend.length} participantes!`);
         } else {
-          setSuccessMessage(`Aposta em grupo "${groupName}" (${gameName} #${contestNumber}) registrada com sucesso para ${participants.length} participantes!`);
+          setSuccessMessage(`Aposta em grupo "${groupName}" (${gameName} #${contestNumber}) registrada com sucesso para ${allParticipantsForBackend.length} participantes!`);
         }
         
         // Limpar o formulário após o sucesso
         setGameNumbers('');
         setContestNumber('');
+        setGroupName('');
+        setParticipants([]); // Limpa a lista de participantes
+        setNewParticipantName('');
+        setNewParticipantEmail('');
       } else {
         setError(response.data.message || 'Erro ao registrar aposta em grupo');
       }
       
     } catch (error: any) {
-      console.error('Erro ao registrar aposta em grupo:', error);
+      console.error('[handleGroupBetSubmit] Erro ao registrar aposta em grupo:', error);
       
       // Exibir mensagem de erro apropriada
       if (error.response) {
@@ -292,20 +315,20 @@ const DashboardPage: React.FC = () => {
         // Verificar se é erro de autenticação
         if (status === 401) {
           setError('Erro de autenticação. Por favor, faça login novamente.');
-        } 
-        // Verificar se é erro de permissão
+        } else if (status === 400 && errorData.message && errorData.message.includes('Participante com e-mail')) {
+          setError(errorData.message); // Exibe mensagem específica sobre participante não registrado
+        } else if (status === 403) { // Erro de permissão (usuário não premium)
+          setError(errorData.message || 'Você não tem permissão para criar bolões. Apenas usuários premium podem fazê-lo.');
+        }
         else if (status === 500 && errorData.error && errorData.error.includes('PERMISSION_DENIED')) {
           setError('Erro de permissão ao salvar aposta. Por favor, contate o suporte.');
         }
-        // Outros erros com resposta
         else {
           setError(errorData.message || 'Erro ao registrar aposta em grupo. Tente novamente.');
         }
       } else if (error.request) {
-        // Erro de conexão com o servidor
         setError('Não foi possível conectar ao servidor. Verifique sua conexão com a internet.');
       } else {
-        // Erro genérico
         setError('Ocorreu um erro ao processar sua solicitação. Tente novamente.');
       }
     } finally {
@@ -976,4 +999,4 @@ const DashboardPage: React.FC = () => {
   );
 };
 
-export default DashboardPage; 
+export default DashboardPage;

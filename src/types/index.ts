@@ -135,7 +135,7 @@ export type BetResult = {
 // Tipo para apostas
 export interface Bet {
   id: string;
-  userId: string;
+  userId: string; // ID do criador da aposta
   jogo: string;
   concurso: string;
   numeros: string[]; // Números apostados pelo usuário
@@ -148,12 +148,13 @@ export interface Bet {
   grupo?: {
     nome: string;
     participantes: { nome: string; email: string }[];
-    criador: string;
+    criador: string; // E-mail do criador (para exibição)
+    criadorUid: string; // UID do criador
+    participantesUids: { [uid: string]: boolean }; // Mapa de UIDs para compatibilidade com regras do Firebase
   };
-  participanteCount?: number;
+  participanteCount?: number; // Contagem de participantes (calculado no backend e enviado)
   sequenciaTeimosinhaIndex?: number;
   sequenciaTeimosinhaTotal?: number;
-  // NOVOS CAMPOS:
   consultado?: boolean; // Indica se o resultado já foi buscado e salvo
   resultadoSorteio?: BetResult; // O resultado do sorteio salvo
 }
