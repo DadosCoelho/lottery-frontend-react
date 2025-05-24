@@ -7,7 +7,7 @@ import { getLotteryGames } from '../services/api';
 import { LotteryGame } from '../types';
 import httpService from '../services/httpService';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:10000/api';
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
