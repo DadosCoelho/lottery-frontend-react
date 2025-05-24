@@ -4,7 +4,7 @@ import { auth } from '../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
 // URL da API - Alterar para a URL real quando em produção
-const API_URL = 'http://localhost:10000/api';
+const API_URL = 'https://lottery-backend-node.onrender.com';
 
 // Definir tipos
 interface User {

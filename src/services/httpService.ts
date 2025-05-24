@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 // API base URL
-const API_URL = 'http://localhost:10000/api';
+const API_URL = 'https://lottery-backend-node.onrender.com';
 
 // Configurações padrão
 const DEFAULT_TIMEOUT = 10000; // 10 segundos

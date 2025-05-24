@@ -7,7 +7,7 @@ import { getLotteryGames } from '../services/api';
 import { LotteryGame } from '../types';
 import httpService from '../services/httpService';
 
-const API_URL = 'http://localhost:10000/api';
+const API_URL = 'https://lottery-backend-node.onrender.com';
 // Não precisamos mais dessa URL, vamos usar nosso proxy
 // const LOTERIA_API_URL = 'https://api.guidi.dev.br/loteria';
 
