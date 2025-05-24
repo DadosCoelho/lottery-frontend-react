@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 // API base URL
-const API_URL = 'https://lottery-backend-node.onrender.com';
+export const API_URL = 'https://lottery-backend-node.onrender.com';
 
 // Configurações padrão
 const DEFAULT_TIMEOUT = 10000; // 10 segundos
@@ -130,4 +130,4 @@ class HttpService {
 // Exportar instância única do serviço HTTP
 export const httpService = new HttpService();
 
-export default httpService; 
+export default httpService;

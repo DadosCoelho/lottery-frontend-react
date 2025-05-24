@@ -5,9 +5,7 @@ import { User, Mail, Award, Archive, Search, Calendar, BarChart, X, Plus, Ticket
 import { useAuth } from '../contexts/AuthContext';
 import { getLotteryGames } from '../services/api';
 import { LotteryGame } from '../types';
-import httpService from '../services/httpService';
-
-const API_URL = 'https://lottery-backend-node.onrender.com';
+import httpService, { API_URL } from '../services/httpService';
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -978,4 +976,4 @@ const DashboardPage: React.FC = () => {
   );
 };
 
-export default DashboardPage; 
+export default DashboardPage;

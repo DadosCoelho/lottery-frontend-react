@@ -1,10 +1,9 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import axios from 'axios';
+import { API_URL } from '../services/httpService';
 import { auth } from '../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
-// URL da API - Alterar para a URL real quando em produção
-const API_URL = 'https://lottery-backend-node.onrender.com';
 
 // Definir tipos
 interface User {
@@ -268,4 +267,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export default AuthProvider; 
+export default AuthProvider;

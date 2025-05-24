@@ -5,11 +5,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { getLotteryGames } from '../services/api';
 import { LotteryGame } from '../types';
-import httpService from '../services/httpService';
-
-const API_URL = 'https://lottery-backend-node.onrender.com';
-// Não precisamos mais dessa URL, vamos usar nosso proxy
-// const LOTERIA_API_URL = 'https://api.guidi.dev.br/loteria';
+import httpService, { API_URL } from '../services/httpService';
 
 type Bet = {
   id: string;
@@ -1240,4 +1236,4 @@ const MinhasApostasPage: React.FC = () => {
   );
 };
 
-export default MinhasApostasPage; 
+export default MinhasApostasPage;
