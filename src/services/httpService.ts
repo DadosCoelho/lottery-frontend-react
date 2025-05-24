@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 // API base URL
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:10000/api';
 
 // Configurações padrão
 const DEFAULT_TIMEOUT = 10000; // 10 segundos
