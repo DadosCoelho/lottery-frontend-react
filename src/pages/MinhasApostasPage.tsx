@@ -5,7 +5,9 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { getLotteryGames } from '../services/api';
 import { LotteryGame } from '../types';
-import httpService, { API_URL } from '../services/httpService';
+import httpService from '../services/httpService';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 type Bet = {
   id: string;
@@ -1236,4 +1238,4 @@ const MinhasApostasPage: React.FC = () => {
   );
 };
 
-export default MinhasApostasPage;
+export default MinhasApostasPage; 

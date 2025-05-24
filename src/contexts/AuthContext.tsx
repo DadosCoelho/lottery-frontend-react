@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import axios from 'axios';
-import { API_URL } from '../services/httpService';
 import { auth } from '../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
+// URL da API - Alterar para a URL real quando em produção
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Definir tipos
 interface User {
