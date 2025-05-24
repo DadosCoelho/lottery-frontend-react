@@ -1,47 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Ticket, Clock, AlertCircle, CheckCircle, Calendar, Info, Filter, RefreshCw, Search, ChevronRight, AlertTriangle, PieChart, BarChart, Award, X, Users } from 'lucide-react';
-import axios from 'axios';
+// axios não é mais necessário aqui se httpService for o único usado
+// import axios from 'axios'; 
 import { useAuth } from '../contexts/AuthContext';
 import { getLotteryGames } from '../services/api';
-import { LotteryGame } from '../types';
 import httpService from '../services/httpService';
+import { LotteryGame, Bet, BetResult } from '../types'; // Importa os tipos do arquivo centralizado
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-type Bet = {
-  id: string;
-  jogo: string;
-  concurso: string;
-  numeros: string[];
-  teimosinha: boolean;
-  qtdTeimosinha: number;
-  dataCriacao: string;
-  status: string;
-  verificadoEm?: string;
-  tipo?: 'individual' | 'grupo';
-  grupo?: {
-    nome: string;
-    participantes: { nome: string; email: string }[];
-    criador: string;
-  };
-  participanteCount?: number;
-  sequenciaTeimosinhaIndex?: number;
-  sequenciaTeimosinhaTotal?: number;
-};
-
-// Definir tipo para resultados de apostas
-type BetResult = {
-  concurso: string;
-  dataSorteio: string;
-  numeros: string[];
-  premiacoes: {
-    acertos: string;
-    ganhadores: number;
-    premio: string;
-  }[];
-  acumulou: boolean;
-};
 
 interface FilterOptions {
   game?: string;
@@ -69,14 +35,14 @@ const MinhasApostasPage: React.FC = () => {
   const [games, setGames] = useState<LotteryGame[]>([]);
   const [showStats, setShowStats] = useState<boolean>(false);
   const [uniqueConcursos, setUniqueConcursos] = useState<string[]>([]);
-  
+
   // Estado para modal de resultados
   const [showResultModal, setShowResultModal] = useState<boolean>(false);
   const [selectedBet, setSelectedBet] = useState<Bet | null>(null);
   const [betResult, setBetResult] = useState<BetResult | null>(null);
   const [loadingResult, setLoadingResult] = useState<boolean>(false);
   const [resultError, setResultError] = useState<string | null>(null);
-  
+
   // Filtros
   const [filters, setFilters] = useState<FilterOptions>({
     game: '',
@@ -105,29 +71,26 @@ const MinhasApostasPage: React.FC = () => {
         console.error('Erro ao carregar jogos:', error);
       }
     };
-    
+
     loadGames();
   }, []);
 
-  // Buscar apostas
+  // Buscar apostas (REMOVIDO: Simulação de status)
   useEffect(() => {
     const fetchBets = async () => {
       setLoading(true);
       try {
-        // Buscar apostas usando o httpService
         const response = await httpService.get('/bets');
-        
+
         if (response.data.success) {
-          const betData = response.data.bets;
+          const betData: Bet[] = response.data.bets; // Tipagem explícita
           
-          // Verificar se as apostas têm resultados disponíveis
-          const updatedBets = await checkResultsForBets(betData);
-          
-          setBets(updatedBets);
-          setFilteredBets(updatedBets);
-          
-          // Extrair concursos únicos para o filtro
-          const concursos = [...new Set(updatedBets.map((bet: Bet) => bet.concurso))];
+          // REMOVIDO: A chamada a checkResultsForBets(betData)
+          // O status virá correto do banco de dados agora
+          setBets(betData);
+          setFilteredBets(betData);
+
+          const concursos = [...new Set(betData.map((bet: Bet) => bet.concurso))];
           setUniqueConcursos(concursos as string[]);
         } else {
           setError(response.data.message || 'Erro ao carregar apostas');
@@ -147,86 +110,11 @@ const MinhasApostasPage: React.FC = () => {
     fetchBets();
   }, []);
 
-  // Função para verificar quais apostas já possuem resultados disponíveis
-  const checkResultsForBets = async (bets: Bet[]): Promise<Bet[]> => {
-    // Em um ambiente real, você faria uma chamada à API para verificar
-    // os resultados disponíveis para cada aposta
-    
-    console.log('Verificando resultados para', bets.length, 'apostas');
-    
-    // Para demonstração, vamos simular que alguns resultados já estão disponíveis
-    // baseado em uma lógica temporal (apostas mais antigas têm maior chance de ter resultado)
-    
-    // Criar uma cópia das apostas para não modificar o array original
-    const updatedBets = [...bets];
-    
-    // Verificar cada aposta
-    const processed = updatedBets.map(bet => {
-      // Forçar que todas as apostas sejam verificadas para fins de demonstração
-      // Para um caso real, você usaria a lógica temporal abaixo
-      
-      // Gerar um status aleatório para demonstração
-      const statusOptions = ['pendente', 'verificada', 'prêmio', 'finalizado'];
-      const randomStatus = statusOptions[Math.floor(Math.random() * statusOptions.length)];
-      
-      // Atualizar a aposta com o novo status
-      return {
-        ...bet,
-        status: randomStatus,
-        verificadoEm: randomStatus !== 'pendente' ? new Date().toISOString() : undefined
-      };
-      
-      /* Lógica temporal (descomentado em produção)
-      // Obter a data da aposta
-      const betDate = new Date(bet.dataCriacao);
-      const now = new Date();
-      
-      // Calcular a diferença em dias
-      const diffTime = Math.abs(now.getTime() - betDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      // Se a aposta já tem um status diferente de "pendente", manter
-      if (bet.status.toLowerCase() !== 'pendente') {
-        return bet;
-      }
-      
-      // Lógica para definir status com base na idade da aposta
-      // Quanto mais antiga a aposta, maior a chance de ter resultado
-      if (diffDays > 7) {
-        // Apostas com mais de 7 dias sempre têm resultado
-        return {
-          ...bet,
-          status: Math.random() > 0.8 ? 'prêmio' : 'finalizado',
-          verificadoEm: new Date(betDate.getTime() + 86400000 * 7).toISOString() // +7 dias
-        };
-      } else if (diffDays > 3) {
-        // Apostas entre 3-7 dias têm 70% de chance
-        if (Math.random() > 0.3) {
-          return {
-            ...bet,
-            status: Math.random() > 0.9 ? 'prêmio' : 'finalizado',
-            verificadoEm: new Date(betDate.getTime() + 86400000 * 3).toISOString() // +3 dias
-          };
-        }
-      } else if (diffDays > 1) {
-        // Apostas entre 1-3 dias têm 30% de chance
-        if (Math.random() > 0.7) {
-          return {
-            ...bet,
-            status: Math.random() > 0.95 ? 'prêmio' : 'finalizado',
-            verificadoEm: new Date(betDate.getTime() + 86400000).toISOString() // +1 dia
-          };
-        }
-      }
-      
-      // Se não atender a nenhuma condição, retorna a aposta original
-      return bet;
-      */
-    });
-    
-    console.log('Apostas processadas:', processed.map(b => b.status));
-    return processed;
-  };
+  // REMOVIDO: checkResultsForBets não é mais necessária
+  // REMOVIDO: simularResultado não é mais necessária
+  // REMOVIDO: updateBetStatus (a que simulava persistência) não é mais necessária
+  // REMOVIDO: getMatchCount (frontend) não é mais necessária para determinar status
+  // REMOVIDO: isWinningBet (frontend) não é mais necessária para determinar status
 
   // Aplicar filtros quando mudarem
   useEffect(() => {
@@ -327,7 +215,7 @@ const MinhasApostasPage: React.FC = () => {
           text: 'Pendente',
           className: 'bg-yellow-100 text-yellow-800'
         };
-      case 'verificada':
+      case 'verificada': // Este status pode ser removido se o backend sempre for para 'prêmio' ou 'finalizado'
         return { 
           icon: <CheckCircle size={16} className="text-green-500" />,
           text: 'Verificada',
@@ -426,106 +314,112 @@ const MinhasApostasPage: React.FC = () => {
     setLoadingResult(true);
     setResultError(null);
     setBetResult(null);
-    
+
     try {
-      // Obter o resultado através do nosso proxy para evitar CORS
-      const jogoNormalizado = normalizarNomeJogo(bet.jogo);
-      const url = `${API_URL}/loteria/${jogoNormalizado}/${bet.concurso}`;
-      
-      console.log(`Buscando resultado da loteria via proxy: ${url}`);
-      
-      const response = await axios.get(url);
-      const resultadoAPI = response.data;
-      
-      console.log('Resultado obtido da API:', resultadoAPI);
-      
-      // Verificar se os dados necessários estão presentes no formato retornado
-      if (!resultadoAPI) {
-        throw new Error('Dados do resultado não encontrados');
+      let fetchedResultData: BetResult | null = null;
+      let newBetStatus: string = bet.status; // Para armazenar o status retornado pelo backend
+
+      // 1. Se o resultado já foi consultado e está salvo, usa os dados salvos
+      if (bet.consultado && bet.resultadoSorteio) {
+        console.log('[Frontend] Resultado já consultado, usando dados salvos.');
+        fetchedResultData = bet.resultadoSorteio;
+        newBetStatus = bet.status; // Usa o status que já está no objeto da aposta
+      } else {
+        // 2. Se não foi consultado, chama o novo endpoint do backend para buscar e salvar
+        console.log('[Frontend] Resultado não consultado, chamando backend para buscar e salvar.');
+        const response = await httpService.get(`/bets/check-and-save-result/${bet.id}`);
+
+        if (response.data.success && response.data.result) {
+          fetchedResultData = response.data.result;
+          newBetStatus = response.data.status; // O backend agora retorna o status atualizado!
+
+          // Atualiza o objeto da aposta localmente para refletir o resultado salvo e o status 'consultado'
+          setBets(prevBets => prevBets.map(b =>
+                      b.id === bet.id ? { ...b, consultado: true, resultadoSorteio: fetchedResultData ?? undefined, status: newBetStatus, verificadoEm: new Date().toISOString() } : b
+                    ));
+          setFilteredBets(prevFilteredBets => prevFilteredBets.map(b =>
+                      b.id === bet.id ? { ...b, consultado: true, resultadoSorteio: fetchedResultData ?? undefined, status: newBetStatus, verificadoEm: new Date().toISOString() } : b
+                    ));
+        } else {
+          throw new Error(response.data.message || 'Erro ao buscar resultado da aposta.');
+        }
       }
-      
-      // Converter o formato da API para o formato da nossa aplicação
-      const resultado: BetResult = {
-        concurso: resultadoAPI.numero?.toString() || bet.concurso,
-        dataSorteio: formatarDataAPI(resultadoAPI.dataApuracao) || new Date().toISOString(),
-        // Escolher a lista de dezenas com base no formato retornado
-        numeros: resultadoAPI.listaDezenas || 
-                resultadoAPI.dezenas || 
-                resultadoAPI.dezenasSorteadasOrdemSorteio || [],
-        premiacoes: processarPremiacoes(resultadoAPI),
-        acumulou: resultadoAPI.acumulado === true || resultadoAPI.valorAcumuladoProximoConcurso > 0
-      };
-      
-      setBetResult(resultado);
+
+      if (!fetchedResultData) {
+        throw new Error('Não foi possível obter o resultado da aposta.');
+      }
+
+      setBetResult(fetchedResultData);
       setLoadingResult(false);
-      
-      // Verificar acertos e atualizar o status da aposta
-      const matchCount = getMatchCount(bet.numeros, resultado.numeros);
-      const isWinner = isWinningBet(matchCount, jogoNormalizado);
-      
-      // Atualizar o status da aposta
-      updateBetStatus(bet, isWinner ? 'prêmio' : 'finalizado');
+
+      // A lógica de `getMatchCount` e `isWinningBet` não é mais necessária aqui no frontend
+      // porque o backend já determinou o status e o enviou.
+      // A função `updateBetStatus` abaixo pode ser simplificada ou removida se não for mais usada para persistência.
+      // Por enquanto, vamos mantê-la para atualizar o estado local da UI.
+      updateBetStatusLocal(bet.id, newBetStatus); // Chama uma função para atualizar o status localmente
       
     } catch (error: any) {
-      console.error('Erro ao buscar resultado:', error);
-      
-      // Se houve erro na API de loterias, tentar usar a simulação
-      try {
-        console.log('Usando simulação como fallback');
-        simularResultado(bet);
-      } catch (simError) {
-        setResultError(error.message || 'Erro ao buscar resultado da aposta');
-        setLoadingResult(false);
+      console.error('[Frontend] Erro ao buscar resultado:', error);
+      let errorMessage = 'Erro ao buscar resultado da aposta.';
+      if (error.response && error.response.data && error.response.data.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+      setResultError(errorMessage);
+      setLoadingResult(false);
     }
   };
+
+  // Função para atualizar o status da aposta apenas no estado local do React
+  const updateBetStatusLocal = (betId: string, newStatus: string) => {
+    setBets(prevBets => prevBets.map(b =>
+      b.id === betId ? { ...b, status: newStatus } : b
+    ));
+    setFilteredBets(prevFilteredBets => prevFilteredBets.map(b =>
+      b.id === betId ? { ...b, status: newStatus } : b
+    ));
+  };
   
-  // Função para formatar a data retornada pela API
+  // Funções auxiliares para o MODAL (apenas para exibição, não para determinar status persistido)
+  // Estas funções são mantidas no frontend para calcular e exibir os acertos no modal.
+  const getMatchCountForDisplay = (betNumbers: string[], resultNumbers: string[]) => {
+    const betNums = Array.isArray(betNumbers) ? betNumbers.map(String) : [];
+    const resultNums = Array.isArray(resultNumbers) ? resultNumbers.map(String) : [];
+    return betNums.filter(num => resultNums.includes(num)).length;
+  };
+  
+  // Função para formatar a data retornada pela API (se necessário para o modal)
   const formatarDataAPI = (dataString?: string): string => {
-    if (!dataString) return new Date().toISOString();
+    if (!dataString) return new Date().toLocaleDateString('pt-BR'); // Retorna data atual formatada
     
     try {
-      // Formato esperado: "17/05/2025"
-      const [dia, mes, ano] = dataString.split('/').map(Number);
-      const data = new Date(ano, mes - 1, dia);
-      return data.toISOString();
+      // Tenta parsear como ISO string primeiro
+      const isoDate = new Date(dataString);
+      if (!isNaN(isoDate.getTime())) {
+        return isoDate.toLocaleDateString('pt-BR');
+      }
+      
+      // Se não for ISO, tenta formato "dd/MM/yyyy"
+      const parts = dataString.split('/');
+      if (parts.length === 3) {
+        const [dia, mes, ano] = parts.map(Number);
+        const data = new Date(ano, mes - 1, dia);
+        if (!isNaN(data.getTime())) {
+          return data.toLocaleDateString('pt-BR');
+        }
+      }
+      
+      return dataString; // Retorna a string original se não conseguir formatar
     } catch (e) {
-      console.error('Erro ao converter data:', e);
-      return new Date().toISOString();
+      console.error('Erro ao converter data para exibição:', e);
+      return dataString;
     }
   };
   
-  // Função para processar as premiações do resultado
-  const processarPremiacoes = (resultadoAPI: any): { acertos: string; ganhadores: number; premio: string }[] => {
-    // Verificar se temos a lista de rateio de prêmio no formato do exemplo
-    if (resultadoAPI.listaRateioPremio && Array.isArray(resultadoAPI.listaRateioPremio)) {
-      return resultadoAPI.listaRateioPremio.map((premio: any) => ({
-        acertos: premio.descricaoFaixa || `${premio.faixa} acertos`,
-        ganhadores: premio.numeroDeGanhadores || 0,
-        premio: formatarValorPremio(premio.valorPremio)
-      }));
-    }
-    
-    // Verificar se temos premiações no formato anterior
-    if (resultadoAPI.premiacoes && Array.isArray(resultadoAPI.premiacoes)) {
-      return resultadoAPI.premiacoes.map((p: any) => ({
-        acertos: p.acertos || p.descricao || "Premiação",
-        ganhadores: p.ganhadores || 0,
-        premio: p.premio || "R$ 0,00"
-      }));
-    }
-    
-    // Formato padrão se nenhum dado de premiação estiver disponível
-    return [
-      { acertos: "6 acertos", ganhadores: 0, premio: "R$ 0,00" },
-      { acertos: "5 acertos", ganhadores: 0, premio: "R$ 0,00" },
-      { acertos: "4 acertos", ganhadores: 0, premio: "R$ 0,00" }
-    ];
-  };
-  
-  // Formatar valor do prêmio como string monetária
+  // Função para formatar valor do prêmio como string monetária (para o modal)
   const formatarValorPremio = (valor: number | string): string => {
-    if (!valor && valor !== 0) return "R$ 0,00";
+    if (valor === null || valor === undefined) return "R$ 0,00";
     
     // Se já for uma string formatada, retornar como está
     if (typeof valor === 'string' && valor.includes('R$')) {
@@ -533,7 +427,7 @@ const MinhasApostasPage: React.FC = () => {
     }
     
     // Converter para número se for string
-    const valorNumerico = typeof valor === 'string' ? parseFloat(valor) : valor;
+    const valorNumerico = typeof valor === 'string' ? parseFloat(valor.replace(',', '.')) : valor;
     
     // Formatar valor como moeda brasileira
     return valorNumerico.toLocaleString('pt-BR', {
@@ -543,112 +437,28 @@ const MinhasApostasPage: React.FC = () => {
     });
   };
   
-  // Função para normalizar o nome do jogo para o formato da API
+  // Função para normalizar o nome do jogo (se necessário para o modal, mas já vem do backend)
+  // Mantida para consistência, mas o nome já deve vir formatado do backend
   const normalizarNomeJogo = (jogo: string): string => {
     const mapeamento: Record<string, string> = {
-      'megasena': 'megasena',
+      'mega-sena': 'megasena',
       'lotofacil': 'lotofacil',
       'quina': 'quina',
       'lotomania': 'lotomania',
       'timemania': 'timemania',
-      'duplasena': 'duplasena',
-      'diadesorte': 'diadesorte',
-      'supersete': 'supersete'
+      'dupla-sena': 'duplasena',
+      'dia-de-sorte': 'diadesorte',
+      'super-sete': 'supersete'
     };
     
-    // Remover espaços, caracteres especiais e converter para minúsculas
     const jogoNormalizado = jogo.toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]/g, "");
     
-    return mapeamento[jogoNormalizado] || 'megasena'; // Padrão para megasena
+    return mapeamento[jogoNormalizado] || jogo; // Retorna o original se não mapear
   };
   
-  // Função para simular um resultado (fallback se a API falhar)
-  const simularResultado = (bet: Bet) => {
-    console.log('Simulando resultado para aposta:', bet);
-    
-    setTimeout(() => {
-      const randomNumbers = Array(6).fill(0).map(() => 
-        Math.floor(Math.random() * 60) + 1
-      ).sort((a, b) => a - b).map(n => n.toString());
-      
-      // Simular resultado
-      const mockResult: BetResult = {
-        concurso: bet.concurso,
-        dataSorteio: new Date().toISOString(),
-        numeros: randomNumbers,
-        premiacoes: [
-          { acertos: "6", ganhadores: Math.random() > 0.98 ? 1 : 0, premio: "R$ 50.000.000,00" },
-          { acertos: "5", ganhadores: Math.floor(Math.random() * 100), premio: "R$ 50.000,00" },
-          { acertos: "4", ganhadores: Math.floor(Math.random() * 1000) + 100, premio: "R$ 1.000,00" }
-        ],
-        acumulou: Math.random() > 0.5
-      };
-      
-      setBetResult(mockResult);
-      setLoadingResult(false);
-      
-      // Atualizar o status da aposta
-      updateBetStatus(bet);
-    }, 1500);
-  };
-  
-  // Função para atualizar o status da aposta
-  const updateBetStatus = (bet: Bet, newStatus: string = 'finalizado') => {
-    // Em produção, você faria uma chamada PUT/PATCH para atualizar o status no servidor
-    // const response = await httpService.patch(`/bets/${bet.id}`, { status: newStatus });
-    
-    // Para demonstração, atualizamos apenas localmente
-    const updatedBets = bets.map(b => {
-      if (b.id === bet.id) {
-        return { ...b, status: newStatus, verificadoEm: new Date().toISOString() };
-      }
-      return b;
-    });
-    
-    setBets(updatedBets);
-    
-    // Atualizar também a lista filtrada
-    const updatedFilteredBets = filteredBets.map(b => {
-      if (b.id === bet.id) {
-        return { ...b, status: newStatus, verificadoEm: new Date().toISOString() };
-      }
-      return b;
-    });
-    
-    setFilteredBets(updatedFilteredBets);
-    
-    // Mensagem de sucesso (em produção, você mostraria baseado na resposta da API)
-    console.log(`Status da aposta ${bet.id} atualizado para '${newStatus}'`);
-  };
-  
-  // Verificar acertos no resultado
-  const getMatchCount = (betNumbers: string[], resultNumbers: string[]) => {
-    return betNumbers.filter(num => resultNumbers.includes(num)).length;
-  };
-  
-  // Verificar se a aposta é premiada
-  const isWinningBet = (matchCount: number, gameType: string = 'megasena') => {
-    // Definir regras de premiação baseadas no tipo de jogo
-    const premiationRules: Record<string, number> = {
-      'megasena': 4,      // 4 ou mais acertos
-      'lotofacil': 11,    // 11 ou mais acertos
-      'quina': 2,         // 2 ou mais acertos
-      'lotomania': 15,    // 15 ou mais acertos
-      'timemania': 3,     // 3 ou mais acertos
-      'duplasena': 4,     // 4 ou mais acertos
-      'diadesorte': 4,    // 4 ou mais acertos
-      'supersete': 3      // 3 ou mais acertos
-    };
-    
-    // Obter o valor mínimo de acertos para o jogo, ou usar 4 como padrão
-    const minMatches = premiationRules[gameType] || 4;
-    
-    return matchCount >= minMatches;
-  };
-
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -733,6 +543,7 @@ const MinhasApostasPage: React.FC = () => {
                 <option value="pendente">Pendente</option>
                 <option value="verificada">Verificada</option>
                 <option value="prêmio">Premiada</option>
+                <option value="finalizado">Finalizado</option> {/* Adicionado para filtro */}
               </select>
             </div>
             
@@ -1132,14 +943,14 @@ const MinhasApostasPage: React.FC = () => {
                   <AlertTriangle size={32} className="mx-auto text-red-500 mb-2" />
                   <p className="text-red-600">{resultError}</p>
                 </div>
-              ) : betResult ? (
+              ) : betResult && selectedBet ? ( // Adicionado selectedBet para garantir acesso aos números da aposta
                 <div>
                   <div className="mb-5">
                     <h4 className="text-sm font-medium text-gray-500 mb-1">
-                      {getGameName(selectedBet?.jogo || '')} - Concurso {betResult.concurso}
+                      {getGameName(selectedBet.jogo || '')} - Concurso {betResult.concurso}
                     </h4>
                     <p className="text-sm text-gray-500 mb-3">
-                      Data do sorteio: {formatDate(betResult.dataSorteio)}
+                      Data do sorteio: {formatarDataAPI(betResult.dataSorteio)}
                     </p>
                     
                     <div className="mb-4">
@@ -1156,7 +967,7 @@ const MinhasApostasPage: React.FC = () => {
                     <div className="mb-4">
                       <h5 className="text-sm font-medium text-gray-700 mb-2">Seus números:</h5>
                       <div className="flex flex-wrap gap-2">
-                        {selectedBet?.numeros.map((num, idx) => {
+                        {selectedBet.numeros.map((num, idx) => {
                           const isMatch = betResult.numeros.includes(num);
                           return (
                             <span 
@@ -1172,31 +983,31 @@ const MinhasApostasPage: React.FC = () => {
                       </div>
                     </div>
                     
-                    {selectedBet && (
-                      <div className="mt-4 p-4 rounded-lg bg-gray-50">
-                        <h5 className="text-sm font-medium text-gray-700 mb-2">Resultado:</h5>
-                        {(() => {
-                          const matchCount = getMatchCount(selectedBet.numeros, betResult.numeros);
-                          const isWinner = isWinningBet(matchCount, selectedBet.jogo);
-                          
-                          return (
-                            <div className={`text-center p-2 rounded-md ${isWinner ? 'bg-green-100' : 'bg-gray-100'}`}>
-                              <p className="text-lg font-semibold mb-1">
-                                {matchCount} {matchCount === 1 ? 'acerto' : 'acertos'}
-                              </p>
-                              <p className={`text-sm ${isWinner ? 'text-green-700' : 'text-gray-500'}`}>
-                                {isWinner 
-                                  ? '🎉 Parabéns! Sua aposta foi premiada!'
-                                  : 'Não foi dessa vez. Tente novamente!'}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-2">
-                                Status da aposta atualizado para: Finalizado
-                              </p>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
+                    <div className="mt-4 p-4 rounded-lg bg-gray-50">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Resultado:</h5>
+                      {(() => {
+                        // Calcula acertos para exibição no modal
+                        const matchCount = getMatchCountForDisplay(selectedBet.numeros, betResult.numeros);
+                        // O status principal vem do backend
+                        const isWinnerStatus = selectedBet.status === 'prêmio';
+                        
+                        return (
+                          <div className={`text-center p-2 rounded-md ${isWinnerStatus ? 'bg-green-100' : 'bg-gray-100'}`}>
+                            <p className="text-lg font-semibold mb-1">
+                              {matchCount} {matchCount === 1 ? 'acerto' : 'acertos'}
+                            </p>
+                            <p className={`text-sm ${isWinnerStatus ? 'text-green-700' : 'text-gray-500'}`}>
+                              {isWinnerStatus 
+                                ? '🎉 Parabéns! Sua aposta foi premiada!'
+                                : 'Não foi dessa vez. Tente novamente!'}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Status da aposta: {getBetStatus(selectedBet.status).text}
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
                   
                   <div className="mt-5 pt-4 border-t border-gray-200">
@@ -1206,7 +1017,7 @@ const MinhasApostasPage: React.FC = () => {
                         <div key={idx} className="flex justify-between text-sm">
                           <span>{premio.acertos} acertos:</span>
                           <span className="font-medium">
-                            {premio.ganhadores} {premio.ganhadores === 1 ? 'ganhador' : 'ganhadores'} - {premio.premio}
+                            {premio.ganhadores} {premio.ganhadores === 1 ? 'ganhador' : 'ganhadores'} - {formatarValorPremio(premio.premio)}
                           </span>
                         </div>
                       ))}
@@ -1238,4 +1049,4 @@ const MinhasApostasPage: React.FC = () => {
   );
 };
 
-export default MinhasApostasPage; 
+export default MinhasApostasPage;

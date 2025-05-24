@@ -114,3 +114,46 @@ export interface FavoriteGame {
   numbers: string[];
   name?: string;
 }
+
+// Tipo para o resultado do sorteio salvo na aposta
+export type BetResult = {
+  concurso: string;
+  dataSorteio: string;
+  numeros: string[]; // Números sorteados
+  premiacoes: {
+    acertos: string;
+    ganhadores: number;
+    premio: string | number; // Pode ser string formatada ou número
+  }[];
+  acumulou: boolean;
+  valorAcumulado?: string;
+  proxConcurso?: string;
+  dataProxConcurso?: string;
+  valorAcumuladoProximoConcurso?: number;
+};
+
+// Tipo para apostas
+export interface Bet {
+  id: string;
+  userId: string;
+  jogo: string;
+  concurso: string;
+  numeros: string[]; // Números apostados pelo usuário
+  teimosinha: boolean;
+  qtdTeimosinha: number;
+  dataCriacao: string;
+  status: string;
+  verificadoEm?: string; // Data/hora da última verificação (opcional)
+  tipo?: 'individual' | 'grupo';
+  grupo?: {
+    nome: string;
+    participantes: { nome: string; email: string }[];
+    criador: string;
+  };
+  participanteCount?: number;
+  sequenciaTeimosinhaIndex?: number;
+  sequenciaTeimosinhaTotal?: number;
+  // NOVOS CAMPOS:
+  consultado?: boolean; // Indica se o resultado já foi buscado e salvo
+  resultadoSorteio?: BetResult; // O resultado do sorteio salvo
+}
