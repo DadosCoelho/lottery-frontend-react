@@ -829,12 +829,8 @@ const MinhasApostasPage: React.FC = () => {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Concurso
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Números
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Data
-                    </th>
+                    {/* Removido: Números */}
+                    {/* Removido: Data */}
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
@@ -880,18 +876,8 @@ const MinhasApostasPage: React.FC = () => {
                             {bet.concurso}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-wrap items-center gap-1">
-                            {bet.numeros.map((num, idx) => (
-                              <span key={idx} className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-medium">
-                                {num}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(bet.dataCriacao)}
-                        </td>
+                        {/* Removido: Números */}
+                        {/* Removido: Data */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.className}`}>
                             {status.icon}
@@ -907,10 +893,7 @@ const MinhasApostasPage: React.FC = () => {
                               <Award size={16} className="mr-1" />
                               Resultado
                             </button>
-                            <button className="text-primary-600 hover:text-primary-900 inline-flex items-center">
-                              Detalhes
-                              <ChevronRight size={16} />
-                            </button>
+                            {/* Removido: Detalhes */}
                           </div>
                         </td>
                       </tr>
