@@ -184,24 +184,76 @@ export const getUserBets = async (): Promise<any[]> => {
 // Buscar resultado específico
 export const getLotteryResult = async (gameId: string, contestNumber: string): Promise<LotteryResult | null> => {
   try {
-    // Em um ambiente de produção, isso seria buscado da API
-    // Temporariamente retornando dados simulados
-    return {
-      id: `${gameId}-${contestNumber}`,
-      jogo: gameId,
-      concurso: contestNumber,
-      data: new Date().toISOString(),
-      numeros: ['01', '05', '12', '24', '37', '45'],
-      premiacoes: [
-        { acertos: 'Sena', ganhadores: 0, premio: 'R$ 0,00' },
-        { acertos: 'Quina', ganhadores: 55, premio: 'R$ 42.932,72' },
-        { acertos: 'Quadra', ganhadores: 3.383, premio: 'R$ 998,10' }
-      ],
-      acumulado: true,
-      valorAcumulado: 'R$ 45.000.000,00',
-      proxConcurso: String(Number(contestNumber) + 1),
-      dataProxConcurso: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-    };
+    // Ajuste: endpoint correto conforme a API
+    // A API espera: /loteria/{gameId}/{contestNumber}
+    // Exemplo: /loteria/lotofacil/3394  ou  /loteria/lotofacil/ultimo
+    const endpoint = `/loteria/${gameId}/${contestNumber}`;
+    const response = await axios.get(endpoint); // Caminho relativo, ativa o proxy do Vite
+
+    if (response.status === 200 && response.data) {
+      const data = response.data;
+
+      // Adaptação dos campos, igual ao getContestDetails
+      if (data.listaDezenas && Array.isArray(data.listaDezenas) && data.listaDezenas.length > 0) {
+        data.dezenas = data.listaDezenas;
+        data.numeros = data.listaDezenas;
+      } else if (data.dezenasSorteadasOrdemSorteio && Array.isArray(data.dezenasSorteadasOrdemSorteio) && data.dezenasSorteadasOrdemSorteio.length > 0) {
+        data.dezenas = data.dezenasSorteadasOrdemSorteio;
+        data.numeros = data.dezenasSorteadasOrdemSorteio;
+      }
+
+      if (data.listaRateioPremio && Array.isArray(data.listaRateioPremio)) {
+        data.premiacoes = data.listaRateioPremio.map((item: any) => ({
+          acertos: item.descricaoFaixa,
+          ganhadores: item.numeroDeGanhadores,
+          premio: item.valorPremio
+        }));
+      }
+
+      if (data.dataApuracao && !data.data) {
+        data.data = data.dataApuracao;
+      }
+
+      if (data.dataProximoConcurso && !data.dataProxConcurso) {
+        data.dataProxConcurso = data.dataProximoConcurso;
+      }
+
+      if (data.valorAcumuladoProximoConcurso && !data.acumuladaProxConcurso) {
+        data.acumuladaProxConcurso = data.valorAcumuladoProximoConcurso;
+      }
+
+      if (data.valorEstimadoProximoConcurso && !data.estimativaProxConcurso) {
+        data.estimativaProxConcurso = data.valorEstimadoProximoConcurso;
+      }
+
+      if (data.numero && !data.concurso) {
+        data.concurso = data.numero;
+      }
+
+      if (data.numeroConcursoProximo && !data.proxConcurso) {
+        data.proxConcurso = data.numeroConcursoProximo;
+      }
+
+      if (data.tipoJogo && !data.loteria) {
+        data.loteria = data.tipoJogo.toLowerCase();
+      }
+
+      if (data.tipoJogo && !data.nome) {
+        data.nome = data.tipoJogo.replace('_', ' ').split(' ').map((word: string) =>
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+      }
+
+      if (!data.numeros || data.numeros.length === 0) {
+        data.numeros = data.dezenas || [];
+      }
+      if (!data.dezenas || data.dezenas.length === 0) {
+        data.dezenas = data.numeros || [];
+      }
+
+      return data;
+    }
+    return null;
   } catch (error) {
     console.error(`Erro ao buscar resultado ${gameId} concurso ${contestNumber}:`, error);
     return null;

@@ -5,8 +5,14 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Adicione este fallback para rotas SPA
-    historyApiFallback: true,
+    // Proxy configuration for API requests
+    proxy: {
+      '/loteria': {
+        target: 'https://api.guidi.dev.br',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   optimizeDeps: {
     exclude: ['lucide-react'],

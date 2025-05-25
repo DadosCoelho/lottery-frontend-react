@@ -1,52 +1,128 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Check, ArrowRight } from 'lucide-react';
+import { Search, Check, ArrowRight, AlertCircle, Loader } from 'lucide-react';
 import { getLotteryGames } from '../services/api';
 import { LotteryGame } from '../types';
 
 const ConsultaPage: React.FC = () => {
   const navigate = useNavigate();
+  const { gameId, concursoId } = useParams();
   const [games, setGames] = useState<LotteryGame[]>([]);
   const [selectedGame, setSelectedGame] = useState<string>('');
   const [contestNumber, setContestNumber] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingGames, setLoadingGames] = useState<boolean>(true);
   const [searchType, setSearchType] = useState<'latest' | 'specific'>('latest');
+  const [error, setError] = useState<string>('');
 
   // Carregar a lista de jogos
   useEffect(() => {
     const loadGames = async () => {
-      setLoading(true);
+      setLoadingGames(true);
+      setError('');
       try {
         const gamesData = await getLotteryGames();
         setGames(gamesData);
-        if (gamesData.length > 0) {
-          setSelectedGame(gamesData[0].id);
-        }
       } catch (error) {
-        console.error('Erro ao carregar jogos:', error);
+        setError('Erro ao carregar lista de jogos. Verifique sua conexão e tente novamente.');
       } finally {
-        setLoading(false);
+        setLoadingGames(false);
       }
     };
 
     loadGames();
   }, []);
 
-  // Submeter consulta
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedGame) {
-      return;
-    }
+  // Sincronizar com parâmetros da URL quando chegamos na página
+  useEffect(() => {
+    if (gameId && games.length > 0) {
+      const gameExists = games.find(game => game.id === gameId);
+      if (gameExists) {
+        setSelectedGame(gameId);
+      } else {
+        setError(`Jogo "${gameId}" não encontrado.`);
+      }
 
-    // Navegar para a página de resultados
-    if (searchType === 'latest') {
-      navigate(`/resultado/${selectedGame}/ultimo`);
-    } else {
-      navigate(`/resultado/${selectedGame}/${contestNumber}`);
+      if (concursoId && concursoId !== 'ultimo') {
+        setSearchType('specific');
+        setContestNumber(concursoId);
+      } else if (concursoId === 'ultimo') {
+        setSearchType('latest');
+        setContestNumber('');
+      }
     }
+  }, [gameId, concursoId, games]);
+
+  // Validar número do concurso
+  const isValidContestNumber = (num: string): boolean => {
+    if (!num || num.trim() === '') return false;
+    const parsed = parseInt(num.trim(), 10);
+    const isValid = !isNaN(parsed) && parsed > 0 && parsed.toString() === num.trim();
+    return isValid;
+  };
+
+  // Submeter consulta
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      if (!selectedGame) {
+        throw new Error('Por favor, selecione uma loteria!');
+      }
+
+      if (searchType === 'specific') {
+        if (!contestNumber.trim()) {
+          throw new Error('Digite o número do concurso!');
+        }
+        if (!isValidContestNumber(contestNumber.trim())) {
+          throw new Error('Digite um número de concurso válido (apenas números positivos)!');
+        }
+      }
+
+      const gameExists = games.find(game => game.id === selectedGame);
+      if (!gameExists) {
+        throw new Error('Jogo selecionado não é válido. Recarregue a página e tente novamente.');
+      }
+
+      const targetConcurso = searchType === 'latest' ? 'ultimo' : contestNumber.trim();
+      const targetUrl = `/resultado/${selectedGame}/${targetConcurso}`;
+      navigate(targetUrl);
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Limpar erro quando campos são alterados
+  useEffect(() => {
+    if (error) {
+      setError('');
+    }
+  }, [selectedGame, contestNumber, searchType]);
+
+  // Handler para mudança de jogo
+  const handleGameChange = (gameId: string) => {
+    setSelectedGame(gameId);
+  };
+
+  // Handler para mudança do tipo de busca
+  const handleSearchTypeChange = (type: 'latest' | 'specific') => {
+    setSearchType(type);
+    if (type === 'latest') {
+      setContestNumber('');
+    }
+  };
+
+  // Handler para mudança do número do concurso
+  const handleContestNumberChange = (value: string) => {
+    const numericValue = value.replace(/[^0-9]/g, '');
+    setContestNumber(numericValue);
   };
 
   return (
@@ -63,6 +139,22 @@ const ConsultaPage: React.FC = () => {
 
       <div className="max-w-2xl mx-auto">
         <div className="card p-8">
+          {/* Loading de jogos */}
+          {loadingGames && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center">
+              <Loader size={20} className="animate-spin text-blue-500 mr-2" />
+              <p className="text-blue-700">Carregando lista de jogos...</p>
+            </div>
+          )}
+
+          {/* Mostrar erro se houver */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
+              <AlertCircle size={20} className="text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+              <p className="text-red-700">{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             {/* Seleção de tipo de consulta */}
             <div className="mb-6">
@@ -70,12 +162,13 @@ const ConsultaPage: React.FC = () => {
               <div className="flex space-x-4">
                 <button
                   type="button"
-                  onClick={() => setSearchType('latest')}
-                  className={`flex-1 py-3 px-4 rounded-lg border ${
+                  onClick={() => handleSearchTypeChange('latest')}
+                  className={`flex-1 py-3 px-4 rounded-lg border transition-colors ${
                     searchType === 'latest'
                       ? 'bg-blue-50 border-blue-200 text-blue-700'
-                      : 'border-gray-200 text-gray-600'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
+                  disabled={loading || loadingGames}
                 >
                   <span className="flex items-center justify-center">
                     {searchType === 'latest' && <Check size={16} className="mr-2" />}
@@ -85,12 +178,13 @@ const ConsultaPage: React.FC = () => {
                 
                 <button
                   type="button"
-                  onClick={() => setSearchType('specific')}
-                  className={`flex-1 py-3 px-4 rounded-lg border ${
+                  onClick={() => handleSearchTypeChange('specific')}
+                  className={`flex-1 py-3 px-4 rounded-lg border transition-colors ${
                     searchType === 'specific'
                       ? 'bg-blue-50 border-blue-200 text-blue-700'
-                      : 'border-gray-200 text-gray-600'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
+                  disabled={loading || loadingGames}
                 >
                   <span className="flex items-center justify-center">
                     {searchType === 'specific' && <Check size={16} className="mr-2" />}
@@ -103,32 +197,37 @@ const ConsultaPage: React.FC = () => {
             {/* Seleção de jogo */}
             <div className="mb-6">
               <label htmlFor="gameSelect" className="block text-sm font-medium text-gray-700 mb-2">
-                Selecione a loteria:
+                Selecione a loteria: *
               </label>
               <select
                 id="gameSelect"
                 className="input"
                 value={selectedGame}
-                onChange={(e) => setSelectedGame(e.target.value)}
+                onChange={(e) => handleGameChange(e.target.value)}
                 required
+                disabled={loading || loadingGames}
               >
-                {games.length === 0 ? (
-                  <option value="">Carregando jogos...</option>
-                ) : (
-                  games.map((game) => (
-                    <option key={game.id} value={game.id}>
-                      {game.nome}
-                    </option>
-                  ))
-                )}
+                <option value="">
+                  {loadingGames ? 'Carregando jogos...' : 'Selecione uma loteria...'}
+                </option>
+                {games.map((game) => (
+                  <option key={game.id} value={game.id}>
+                    {game.nome}
+                  </option>
+                ))}
               </select>
+              {games.length === 0 && !loadingGames && (
+                <p className="text-xs text-red-500 mt-1">
+                  Nenhum jogo disponível. Verifique sua conexão.
+                </p>
+              )}
             </div>
 
             {/* Número do concurso (apenas se for específico) */}
             {searchType === 'specific' && (
               <div className="mb-6">
                 <label htmlFor="contestNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                  Número do concurso:
+                  Número do concurso: *
                 </label>
                 <input
                   id="contestNumber"
@@ -136,7 +235,8 @@ const ConsultaPage: React.FC = () => {
                   className="input"
                   placeholder="Ex: 2500"
                   value={contestNumber}
-                  onChange={(e) => setContestNumber(e.target.value)}
+                  onChange={(e) => handleContestNumberChange(e.target.value)}
+                  disabled={loading}
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -149,12 +249,27 @@ const ConsultaPage: React.FC = () => {
             <div className="mt-8">
               <button
                 type="submit"
-                className="button-primary w-full py-4 flex items-center justify-center"
-                disabled={searchType === 'specific' && !contestNumber}
+                className="button-primary w-full py-4 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={
+                  loading ||
+                  loadingGames ||
+                  !selectedGame ||
+                  games.length === 0 ||
+                  (searchType === 'specific' && (!contestNumber || !isValidContestNumber(contestNumber)))
+                }
               >
-                <Search size={20} className="mr-2" />
-                <span>Consultar Resultado</span>
-                <ArrowRight size={20} className="ml-2" />
+                {loading ? (
+                  <>
+                    <Loader size={20} className="animate-spin mr-2" />
+                    <span>Consultando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search size={20} className="mr-2" />
+                    <span>Consultar Resultado</span>
+                    <ArrowRight size={20} className="ml-2" />
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -193,4 +308,4 @@ const ConsultaPage: React.FC = () => {
   );
 };
 
-export default ConsultaPage; 
+export default ConsultaPage;
