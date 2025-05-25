@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { AtSign, Eye, EyeOff, Key, LogIn, AlertCircle } from 'lucide-react';
+import { AtSign, Eye, EyeOff, Key, LogIn, AlertCircle, Clover } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,7 +10,6 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null); // Para debug
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
@@ -18,7 +17,6 @@ const LoginPage: React.FC = () => {
   // Redirecionar se já estiver autenticado
   useEffect(() => {
     if (isAuthenticated) {
-      console.log('Usuário já autenticado, redirecionando...');
       navigate('/');
     }
   }, [isAuthenticated, navigate]);
@@ -26,79 +24,72 @@ const LoginPage: React.FC = () => {
   // Verificar se há uma mensagem de sucesso do registro
   useEffect(() => {
     if (location.state?.message) {
-      setDebugInfo(location.state.message);
+      // Mensagem de sucesso do registro pode ser exibida como toast ou ignorada
     }
   }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Tentando fazer login com:', email);
-    
     if (!email.trim() || !password.trim()) {
       setError('Por favor, preencha todos os campos');
       return;
     }
-    
     try {
       setLoading(true);
       setError(null);
-      setDebugInfo('Enviando requisição de login...');
-      
       const result = await login(email, password);
-      setDebugInfo(`Resultado do login: ${JSON.stringify(result)}`);
-      
       if (result.success) {
-        // Redirecionar para a página principal ou página de origem
-        setDebugInfo('Login bem-sucedido, redirecionando...');
         const origin = location.state?.from?.pathname || '/';
         navigate(origin);
       } else {
-        setDebugInfo(`Erro no login: ${result.message}`);
         setError(result.message || 'Erro ao realizar login');
       }
     } catch (error: any) {
-      console.error('Erro completo:', error);
-      setDebugInfo(`Erro capturado: ${error.message || 'Erro desconhecido'}`);
       setError('Erro ao realizar login. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Adicionar informações de debug na parte inferior da página
-  const renderDebugInfo = () => {
-    if (process.env.NODE_ENV !== 'production' && debugInfo) {
-      return (
-        <div className="mt-8 p-4 bg-gray-100 rounded-md text-xs">
-          <p className="font-bold mb-2">Informações de debug:</p>
-          <p className="whitespace-pre-wrap">{debugInfo}</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md"
-      >
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Acesso ao Sistema
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Entre com suas credenciais para acessar
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-100 via-blue-50 to-primary-50 px-2">
+      <div className="flex flex-col md:flex-row w-full max-w-4xl shadow-2xl rounded-2xl overflow-hidden bg-white">
+        {/* Banner lateral */}
+        <motion.div
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex md:flex flex-col justify-center items-center bg-gradient-to-br from-primary-600 to-blue-500 md:w-1/2 w-full md:p-10 p-6 text-white md:rounded-none rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none"
+        >
+          <Clover size={56} className="mb-4 drop-shadow-lg" />
+          <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">Bem-vindo ao Conf-Loto</h2>
+          <p className="text-base md:text-lg mb-4 md:mb-6 text-blue-100 text-center">
+            Consulte resultados, estatísticas e gerencie suas apostas em um só lugar.
           </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {/* Campo de e-mail */}
-          <div className="rounded-md -space-y-px">
-            <div className="mb-4">
+          <div className="mt-4 md:mt-8 text-sm text-blue-100/80 text-center">
+            <span>Não tem conta?</span>
+            <Link
+              to="/register"
+              className="ml-2 underline font-semibold text-white hover:text-yellow-200"
+            >
+              Registrar-se
+            </Link>
+          </div>
+        </motion.div>
+        {/* Card de login */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="w-full md:w-1/2 p-6 md:p-12 flex flex-col justify-center bg-white"
+        >
+          <div className="flex flex-col items-center mb-6">
+            <Clover size={36} className="text-primary-600 mb-2" />
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Acesso ao Sistema</h2>
+            <p className="text-gray-500 text-xs md:text-sm text-center">Entre com suas credenciais para acessar</p>
+          </div>
+          <form className="space-y-5 md:space-y-6" onSubmit={handleSubmit}>
+            <div>
               <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-1">
                 E-mail
               </label>
@@ -119,9 +110,7 @@ const LoginPage: React.FC = () => {
                 />
               </div>
             </div>
-            
-            {/* Campo de senha */}
-            <div className="mb-4">
+            <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Senha
               </label>
@@ -145,6 +134,7 @@ const LoginPage: React.FC = () => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="text-gray-400 hover:text-gray-500"
+                    tabIndex={-1}
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5" />
@@ -155,54 +145,49 @@ const LoginPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+            {/* Mensagem de erro */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
+                <AlertCircle size={20} className="mr-2 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
 
-          {/* Mensagem de erro */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
-              <AlertCircle size={20} className="mr-2 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {/* Botão de login */}
-          <div>
-            <button
-              type="submit"
-              className="button-primary w-full flex justify-center items-center"
-              disabled={loading}
-            >
-              {loading ? (
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <LogIn className="h-5 w-5 mr-2" />
-              )}
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-          </div>
-          
-          {/* Link para registro */}
-          <div className="text-center mt-4">
-            <p className="text-sm text-gray-600">
-              Não tem uma conta?{' '}
-              <Link
-                to="/register"
-                className="font-medium text-blue-600 hover:text-blue-500"
+            {/* Botão de login */}
+            <div>
+              <button
+                type="submit"
+                className="button-primary w-full flex justify-center items-center text-base md:text-lg py-3"
+                disabled={loading}
               >
-                Registrar-se
-              </Link>
-            </p>
-          </div>
-          
-          {/* Informações de debug */}
-          {renderDebugInfo()}
-        </form>
-      </motion.div>
+                {loading ? (
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <LogIn className="h-5 w-5 mr-2" />
+                )}
+                {loading ? 'Entrando...' : 'Entrar'}
+              </button>
+            </div>
+            {/* Link para registro mobile */}
+            <div className="text-center mt-4 md:hidden">
+              <p className="text-sm text-gray-600">
+                Não tem uma conta?{' '}
+                <Link
+                  to="/register"
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
+                  Registrar-se
+                </Link>
+              </p>
+            </div>
+          </form>
+        </motion.div>
+      </div>
     </div>
   );
 };
 
-export default LoginPage; 
+export default LoginPage;
