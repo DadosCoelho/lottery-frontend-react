@@ -5,10 +5,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Proxy configuration for API requests
+    // Proxy configuration for API requests (apenas para desenvolvimento local)
     proxy: {
-      '/loteria': {
-        target: 'https://api.guidi.dev.br',
+      '/api': {
+        target: 'http://localhost:3000', // backend local (ajuste a porta se necessário)
         changeOrigin: true,
         secure: false,
       },
