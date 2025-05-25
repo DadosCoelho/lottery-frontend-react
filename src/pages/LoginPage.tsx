@@ -34,21 +34,23 @@ const LoginPage: React.FC = () => {
       setError('Por favor, preencha todos os campos');
       return;
     }
+    let didNavigate = false;
     try {
       setLoading(true);
       setError(null);
       const result = await login(email, password);
       if (result.success) {
         const origin = location.state?.from?.pathname || '/';
+        didNavigate = true;
         navigate(origin);
-        return; // Pare aqui para não executar o finally
+        return;
       } else {
         setError(result.message || 'Erro ao realizar login');
       }
     } catch (error: any) {
       setError('Erro ao realizar login. Tente novamente.');
     } finally {
-      setLoading(false);
+      if (!didNavigate) setLoading(false);
     }
   };
 
