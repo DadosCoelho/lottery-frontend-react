@@ -451,8 +451,9 @@ const DashboardPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Consultar Resultados (agora leva para /consulta) */}
             <button 
-              onClick={() => navigate('/resultados')}
+              onClick={() => navigate('/consulta')}
               className="card bg-blue-50 hover:bg-blue-100 transition-colors p-4 flex items-center border-none"
             >
               <div className="bg-blue-100 rounded-full p-3 mr-4">
@@ -464,45 +465,39 @@ const DashboardPage: React.FC = () => {
               </div>
             </button>
 
+            {/* Botão para Minhas Apostas */}
             <button 
-              onClick={() => navigate('/estatisticas')}
-              className="card bg-purple-50 hover:bg-purple-100 transition-colors p-4 flex items-center border-none"
+              onClick={() => navigate('/minhas-apostas')}
+              className="card bg-green-50 hover:bg-green-100 transition-colors p-4 flex items-center border-none"
             >
-              <div className="bg-purple-100 rounded-full p-3 mr-4">
-                <BarChart size={20} className="text-purple-600" />
+              <div className="bg-green-100 rounded-full p-3 mr-4">
+                <CheckSquare size={20} className="text-green-600" />
               </div>
               <div className="text-left">
-                <h4 className="font-medium text-gray-900">Estatísticas</h4>
-                <p className="text-sm text-gray-600">Análise estatística dos sorteios</p>
+                <h4 className="font-medium text-gray-900">Minhas Apostas</h4>
+                <p className="text-sm text-gray-600">Veja todas as suas apostas registradas</p>
               </div>
             </button>
           </div>
 
+          {/* Botões de aposta simples e em grupo com largura igual aos cards acima */}
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button 
-              onClick={() => navigate('/consulta')}
-              className="button-primary w-full py-3"
+              onClick={openBetModal}
+              className="button bg-green-600 hover:bg-green-700 text-white w-full py-3 flex items-center justify-center rounded-lg shadow card"
+              style={{ minHeight: '72px' }}
             >
-              Consultar Novos Resultados
+              <Ticket size={18} className="mr-2" />
+              Aposta Simples
             </button>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <button 
-                onClick={openBetModal}
-                className="button bg-green-600 hover:bg-green-700 text-white w-full py-3 flex items-center justify-center"
-              >
-                <Ticket size={18} className="mr-2" />
-                Aposta Simples
-              </button>
-              
-              <button 
-                onClick={openGroupBetModal}
-                className="button bg-purple-600 hover:bg-purple-700 text-white w-full py-3 flex items-center justify-center"
-              >
-                <Users size={18} className="mr-2" />
-                Aposta em Grupo
-              </button>
-            </div>
+            <button 
+              onClick={openGroupBetModal}
+              className="button bg-purple-600 hover:bg-purple-700 text-white w-full py-3 flex items-center justify-center rounded-lg shadow card"
+              style={{ minHeight: '72px' }}
+            >
+              <Users size={18} className="mr-2" />
+              Aposta em Grupo
+            </button>
           </div>
         </motion.div>
       </div>
