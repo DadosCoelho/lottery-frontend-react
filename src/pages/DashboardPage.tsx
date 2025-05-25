@@ -923,19 +923,25 @@ const DashboardPage: React.FC = () => {
                       Teimosinha
                     </label>
                     
+                    {/* Quantidade de Teimosinha */}
                     {isTeimosinha && (
-                      <select
-                        id="teimosinhaCount"
-                        className="ml-4 w-20 input py-1"
-                        value={teimosinhaCount}
-                        onChange={(e) => setTeimosinhaCount(e.target.value)}
-                      >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                          <option key={num} value={num}>
-                            {num}x
-                          </option>
-                        ))}
-                      </select>
+                      <div>
+                        <label htmlFor="teimosinhaCount" className="block text-sm font-medium text-gray-700 mb-1">
+                          Quantas vezes repetir?
+                        </label>
+                        <select
+                          id="teimosinhaCount"
+                          className="input"
+                          value={teimosinhaCount}
+                          onChange={(e) => setTeimosinhaCount(e.target.value)}
+                        >
+                          {currentConfig.teimosinhaOptions.map((num) => (
+                            <option key={num} value={num}>
+                              {num}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     )}
                   </div>
 
