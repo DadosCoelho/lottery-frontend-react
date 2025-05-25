@@ -184,13 +184,15 @@ export const getUserBets = async (): Promise<any[]> => {
 // Buscar resultado específico
 export const getLotteryResult = async (gameId: string, contestNumber: string): Promise<LotteryResult | null> => {
   try {
-    // Ajuste: endpoint correto conforme a API
-    // A API espera: /loteria/{gameId}/{contestNumber}
-    // Exemplo: /loteria/lotofacil/3394  ou  /loteria/lotofacil/ultimo
     const endpoint = `/loteria/${gameId}/${contestNumber}`;
-    const response = await axios.get(endpoint); // Caminho relativo, ativa o proxy do Vite
+    const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+    const url = isDev
+      ? endpoint // Proxy do Vite em dev
+      : `https://api.guidi.dev.br${endpoint}`; // API real em produção
 
-    if (response.status === 200 && response.data) {
+    const response = await axios.get(url);
+
+    if (response.status === 200 && response.data && typeof response.data === 'object') {
       const data = response.data;
 
       // Adaptação dos campos, igual ao getContestDetails
