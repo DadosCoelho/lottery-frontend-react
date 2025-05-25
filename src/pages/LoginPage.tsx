@@ -40,10 +40,10 @@ const LoginPage: React.FC = () => {
       const result = await login(email, password);
       if (result.success) {
         const origin = location.state?.from?.pathname || '/';
-        // Aguarda 4 segundo antes de navegar
+        // Aguarda 10 segundo antes de navegar
         setTimeout(() => {
           navigate(origin);
-        }, 4000); // Redireciona após 4 segundos
+        }, 10000); // Redireciona após 10 segundos
         return;
       } else {
         setError(result.message || 'Erro ao realizar login');
