@@ -43,7 +43,7 @@ const LoginPage: React.FC = () => {
         // Aguarda 10 segundo antes de navegar
         setTimeout(() => {
           navigate(origin);
-        }, 10000); // Redireciona após 10 segundos
+        }, 1000); // Redireciona após 1 segundos
         return;
       } else {
         setError(result.message || 'Erro ao realizar login');
