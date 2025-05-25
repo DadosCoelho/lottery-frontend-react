@@ -225,7 +225,7 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // Submeter o formulário de apostas em grupo (MODIFICADO)
+  // Submeter o formulário de apostas em grupo
   const handleGroupBetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -336,13 +336,14 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const gameConfigs: Record<string, { min: number; max: number; range: number }> = {
-    megasena: { min: 6, max: 15, range: 60 },
-    lotofacil: { min: 15, max: 20, range: 25 },
-    quina: { min: 5, max: 15, range: 80 },
+  const gameConfigs: Record<string, { min: number; max: number; range: number; teimosinhaOptions: number[] }> = {
+    "megasena": { "min": 6, "max": 20, "range": 60, "teimosinhaOptions": [2, 3, 4, 6, 8, 9, 12] },
+    "lotofacil": { "min": 15, "max": 20, "range": 25, "teimosinhaOptions": [2, 3, 4, 6, 8, 9, 12, 18, 24] },
+    "quina": { "min": 5, "max": 15, "range": 80, "teimosinhaOptions": [3, 6, 12, 18, 24] },
+    "lotomania": { "min": 50, "max": 50, "range": 100, "teimosinhaOptions": [2, 3, 4, 6, 8, 9, 12] }
     // Adicione outras modalidades conforme necessário
   };
-  const currentConfig = gameConfigs[selectedGame] || { min: 6, max: 15, range: 60 };
+  const currentConfig = gameConfigs[selectedGame] || { min: 6, max: 15, range: 60, teimosinhaOptions: [2, 3, 4, 6, 8, 9, 12, 18, 24] };
 
   const [selectedNumbers, setSelectedNumbers] = React.useState<number[]>([]);
 
@@ -704,7 +705,7 @@ const DashboardPage: React.FC = () => {
                         value={teimosinhaCount}
                         onChange={(e) => setTeimosinhaCount(e.target.value)}
                       >
-                        {[2, 3, 4, 6, 8, 9, 12, 18, 24].map((num) => (
+                        {currentConfig.teimosinhaOptions.map((num) => (
                           <option key={num} value={num}>
                             {num}
                           </option>

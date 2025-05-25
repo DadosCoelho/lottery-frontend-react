@@ -49,22 +49,6 @@ export const getLotteryGames = async (): Promise<LotteryGame[]> => {
         numerosPossiveis: 100,
         cor: '#F78100',
         descricao: 'A Lotomania oferece 8 faixas de premiação.'
-      },
-      {
-        id: 'timemania',
-        nome: 'Timemania',
-        numerosJogados: 10,
-        numerosPossiveis: 80,
-        cor: '#00FF48',
-        descricao: 'Na Timemania você aposta em dez números e um Time do Coração.'
-      },
-      {
-        id: 'duplasena',
-        nome: 'Dupla Sena',
-        numerosJogados: 6,
-        numerosPossiveis: 50,
-        cor: '#A61324',
-        descricao: 'A Dupla Sena realiza dois sorteios por concurso.'
       }
     ];
   } catch (error) {
