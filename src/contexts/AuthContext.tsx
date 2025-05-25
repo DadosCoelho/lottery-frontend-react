@@ -15,6 +15,7 @@ interface User {
     nome?: string;
     createdAt?: string;
     lastUpdated?: string;
+    is_premium?: boolean;
   };
 }
 
