@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { LotteryGame, GameDetails, LotteryResult } from '../types';
 
-// Base API URL
-const API_URL = 'https://api.guidi.dev.br/loteria';
+// Use a variável de ambiente para a URL base do backend
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -184,75 +184,75 @@ export const getUserBets = async (): Promise<any[]> => {
 // Buscar resultado específico
 export const getLotteryResult = async (gameId: string, contestNumber: string): Promise<LotteryResult | null> => {
   try {
+    // Agora consulta o backend, não mais a API externa diretamente!
     const endpoint = `/loteria/${gameId}/${contestNumber}`;
-    const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-    const url = isDev
-      ? endpoint // Proxy do Vite em dev
-      : `https://api.guidi.dev.br${endpoint}`; // API real em produção
-
-    const response = await axios.get(url);
+    const response = await api.get(endpoint);
 
     if (response.status === 200 && response.data && typeof response.data === 'object') {
       const data = response.data;
-
-      // Adaptação dos campos, igual ao getContestDetails
+      
+      // Adaptação para o formato específico do JSON retornado
       if (data.listaDezenas && Array.isArray(data.listaDezenas) && data.listaDezenas.length > 0) {
         data.dezenas = data.listaDezenas;
         data.numeros = data.listaDezenas;
-      } else if (data.dezenasSorteadasOrdemSorteio && Array.isArray(data.dezenasSorteadasOrdemSorteio) && data.dezenasSorteadasOrdemSorteio.length > 0) {
+      } 
+      // Outra possibilidade é usar dezenasSorteadasOrdemSorteio
+      else if (data.dezenasSorteadasOrdemSorteio && Array.isArray(data.dezenasSorteadasOrdemSorteio) && data.dezenasSorteadasOrdemSorteio.length > 0) {
         data.dezenas = data.dezenasSorteadasOrdemSorteio;
         data.numeros = data.dezenasSorteadasOrdemSorteio;
       }
-
+      
+      // Mapeamento de outros campos relevantes se não existirem
       if (data.listaRateioPremio && Array.isArray(data.listaRateioPremio)) {
         data.premiacoes = data.listaRateioPremio.map((item: any) => ({
           acertos: item.descricaoFaixa,
-          ganhadores: item.numeroDeGanhadores,
+          vencedores: item.numeroDeGanhadores,
           premio: item.valorPremio
         }));
       }
-
+      
       if (data.dataApuracao && !data.data) {
         data.data = data.dataApuracao;
       }
-
+      
       if (data.dataProximoConcurso && !data.dataProxConcurso) {
         data.dataProxConcurso = data.dataProximoConcurso;
       }
-
+      
       if (data.valorAcumuladoProximoConcurso && !data.acumuladaProxConcurso) {
         data.acumuladaProxConcurso = data.valorAcumuladoProximoConcurso;
       }
-
+      
       if (data.valorEstimadoProximoConcurso && !data.estimativaProxConcurso) {
         data.estimativaProxConcurso = data.valorEstimadoProximoConcurso;
       }
-
+      
       if (data.numero && !data.concurso) {
         data.concurso = data.numero;
       }
-
+      
       if (data.numeroConcursoProximo && !data.proxConcurso) {
         data.proxConcurso = data.numeroConcursoProximo;
       }
-
+      
       if (data.tipoJogo && !data.loteria) {
         data.loteria = data.tipoJogo.toLowerCase();
       }
-
+      
       if (data.tipoJogo && !data.nome) {
-        data.nome = data.tipoJogo.replace('_', ' ').split(' ').map((word: string) =>
+        data.nome = data.tipoJogo.replace('_', ' ').split(' ').map((word: string) => 
           word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
         ).join(' ');
       }
-
+      
+      // Garantimos que sempre temos o campo numeros e/ou dezenas como array
       if (!data.numeros || data.numeros.length === 0) {
         data.numeros = data.dezenas || [];
       }
       if (!data.dezenas || data.dezenas.length === 0) {
         data.dezenas = data.numeros || [];
       }
-
+      
       return data;
     }
     return null;
