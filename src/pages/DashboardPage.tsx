@@ -160,36 +160,74 @@ const DashboardPage: React.FC = () => {
         return;
       }
 
-      // Preparar os dados da aposta
-      const betData = {
-        jogo: selectedGame,
-        concurso: contestNumber,
-        numeros: numbersArray,
-        teimosinha: isTeimosinha,
-        qtdTeimosinha: isTeimosinha ? parseInt(teimosinhaCount) : 1
-      };
+      // Validar quantidade mínima de números
+      if (selectedNumbers.length < currentConfig.min) {
+        setError(`Selecione pelo menos ${currentConfig.min} números para este jogo.`);
+        setLoading(false);
+        return;
+      }
 
-      console.log('Enviando aposta:', betData);
-      
-      // Usar o httpService em vez de axios diretamente
-      const response = await httpService.post('/bets', betData);
-      
-      if (response.data.success) {
-        // Aposta registrada com sucesso
-        const gameName = games.find(g => g.id === selectedGame)?.nome || selectedGame;
-        const qtdApostas = isTeimosinha ? parseInt(teimosinhaCount) : 1;
+      const qtdApostas = isTeimosinha ? parseInt(teimosinhaCount) : 1;
+      const contestoInicial = parseInt(contestNumber);
+
+      // Se for teimosinha, criar múltiplas apostas
+      if (isTeimosinha && qtdApostas > 1) {
+        const apostasPromises = [];
         
-        if (isTeimosinha && qtdApostas > 1) {
-          setSuccessMessage(`${qtdApostas} apostas teimosinha ${gameName} (começando no concurso #${contestNumber}) registradas com sucesso!`);
-        } else {
-          setSuccessMessage(`Aposta ${gameName} #${contestNumber} registrada com sucesso!`);
+        for (let i = 0; i < qtdApostas; i++) {
+          const betData = {
+            jogo: selectedGame,
+            concurso: (contestoInicial + i).toString(), // Incrementa o número do concurso
+            numeros: numbersArray,
+            teimosinha: false, // Cada aposta individual não é teimosinha
+            qtdTeimosinha: 1
+          };
+          
+          apostasPromises.push(httpService.post('/bets', betData));
         }
         
-        // Limpar o formulário após o sucesso
-        setGameNumbers('');
-        setContestNumber('');
+        // Aguardar todas as apostas serem processadas
+        const responses = await Promise.all(apostasPromises);
+        
+        // Verificar se todas foram bem-sucedidas
+        const failedBets = responses.filter(response => !response.data.success);
+        
+        if (failedBets.length > 0) {
+          setError(`Erro ao registrar ${failedBets.length} aposta(s). Algumas podem ter sido registradas com sucesso.`);
+        } else {
+          const gameName = games.find(g => g.id === selectedGame)?.nome || selectedGame;
+          setSuccessMessage(`${qtdApostas} apostas teimosinha ${gameName} (concursos #${contestoInicial} a #${contestoInicial + qtdApostas - 1}) registradas com sucesso!`);
+          
+          // Limpar o formulário após o sucesso
+          setGameNumbers('');
+          setContestNumber('');
+          setSelectedNumbers([]);
+        }
       } else {
-        setError(response.data.message || 'Erro ao registrar aposta');
+        // Aposta simples (não teimosinha ou apenas 1 concurso)
+        const betData = {
+          jogo: selectedGame,
+          concurso: contestNumber,
+          numeros: numbersArray,
+          teimosinha: false,
+          qtdTeimosinha: 1
+        };
+
+        console.log('Enviando aposta:', betData);
+        
+        const response = await httpService.post('/bets', betData);
+        
+        if (response.data.success) {
+          const gameName = games.find(g => g.id === selectedGame)?.nome || selectedGame;
+          setSuccessMessage(`Aposta ${gameName} #${contestNumber} registrada com sucesso!`);
+          
+          // Limpar o formulário após o sucesso
+          setGameNumbers('');
+          setContestNumber('');
+          setSelectedNumbers([]);
+        } else {
+          setError(response.data.message || 'Erro ao registrar aposta');
+        }
       }
     } catch (error: any) {
       console.error('Erro ao registrar aposta:', error);
@@ -239,7 +277,6 @@ const DashboardPage: React.FC = () => {
       }
 
       // Preparar a lista completa de participantes para enviar ao backend
-      // Inclui o criador da aposta na lista de participantes se ele ainda não estiver lá
       const allParticipantsForBackend = [...participants];
       const creatorEmail = user?.email;
       const creatorName = user?.profile?.nome || user?.email?.split('@')[0];
@@ -262,46 +299,92 @@ const DashboardPage: React.FC = () => {
         return;
       }
 
-      // Preparar os dados da aposta em grupo
-      const groupBetData = {
-        jogo: selectedGame,
-        concurso: contestNumber,
-        numeros: numbersArray,
-        teimosinha: isTeimosinha,
-        qtdTeimosinha: isTeimosinha ? parseInt(teimosinhaCount) : 1,
-        grupo: {
-          nome: groupName,
-          // Envia a lista completa de participantes (nomes/e-mails) para o backend.
-          // O backend resolverá os UIDs e os armazenará em `participantesUids`.
-          participantes: allParticipantsForBackend.map(p => ({ nome: p.name, email: p.email })),
-          criador: user?.email || '' // Mantém o e-mail do criador para exibição ou compatibilidade
-        }
-      };
+      // Validar quantidade mínima de números
+      if (selectedNumbers.length < currentConfig.min) {
+        setError(`Selecione pelo menos ${currentConfig.min} números para este jogo.`);
+        setLoading(false);
+        return;
+      }
 
-      console.log('[handleGroupBetSubmit] Enviando aposta em grupo:', groupBetData);
-      
-      // Enviar os dados para a API
-      const response = await httpService.post('/bets/group', groupBetData);
-      
-      if (response.data.success) {
-        const gameName = games.find(g => g.id === selectedGame)?.nome || selectedGame;
-        const qtdApostas = isTeimosinha ? parseInt(teimosinhaCount) : 1;
+      const qtdApostas = isTeimosinha ? parseInt(teimosinhaCount) : 1;
+      const contestoInicial = parseInt(contestNumber);
+
+      // Se for teimosinha, criar múltiplas apostas em grupo
+      if (isTeimosinha && qtdApostas > 1) {
+        const apostasPromises = [];
         
-        if (isTeimosinha && qtdApostas > 1) {
-          setSuccessMessage(`${qtdApostas} apostas teimosinha em grupo "${groupName}" (${gameName}, começando no concurso #${contestNumber}) registradas com sucesso para ${allParticipantsForBackend.length} participantes!`);
-        } else {
-          setSuccessMessage(`Aposta em grupo "${groupName}" (${gameName} #${contestNumber}) registrada com sucesso para ${allParticipantsForBackend.length} participantes!`);
+        for (let i = 0; i < qtdApostas; i++) {
+          const groupBetData = {
+            jogo: selectedGame,
+            concurso: (contestoInicial + i).toString(), // Incrementa o número do concurso
+            numeros: numbersArray,
+            teimosinha: false, // Cada aposta individual não é teimosinha
+            qtdTeimosinha: 1,
+            grupo: {
+              nome: `${groupName} - Concurso ${contestoInicial + i}`,
+              participantes: allParticipantsForBackend.map(p => ({ nome: p.name, email: p.email })),
+              criador: user?.email || ''
+            }
+          };
+          
+          apostasPromises.push(httpService.post('/bets/group', groupBetData));
         }
         
-        // Limpar o formulário após o sucesso
-        setGameNumbers('');
-        setContestNumber('');
-        setGroupName('');
-        setParticipants([]); // Limpa a lista de participantes
-        setNewParticipantName('');
-        setNewParticipantEmail('');
+        // Aguardar todas as apostas serem processadas
+        const responses = await Promise.all(apostasPromises);
+        
+        // Verificar se todas foram bem-sucedidas
+        const failedBets = responses.filter(response => !response.data.success);
+        
+        if (failedBets.length > 0) {
+          setError(`Erro ao registrar ${failedBets.length} aposta(s) em grupo. Algumas podem ter sido registradas com sucesso.`);
+        } else {
+          const gameName = games.find(g => g.id === selectedGame)?.nome || selectedGame;
+          setSuccessMessage(`${qtdApostas} apostas teimosinha em grupo "${groupName}" (${gameName}, concursos #${contestoInicial} a #${contestoInicial + qtdApostas - 1}) registradas com sucesso para ${allParticipantsForBackend.length} participantes!`);
+          
+          // Limpar o formulário após o sucesso
+          setGameNumbers('');
+          setContestNumber('');
+          setGroupName('');
+          setParticipants([]);
+          setNewParticipantName('');
+          setNewParticipantEmail('');
+          setSelectedNumbers([]);
+        }
       } else {
-        setError(response.data.message || 'Erro ao registrar aposta em grupo');
+        // Aposta em grupo simples (não teimosinha ou apenas 1 concurso)
+        const groupBetData = {
+          jogo: selectedGame,
+          concurso: contestNumber,
+          numeros: numbersArray,
+          teimosinha: false,
+          qtdTeimosinha: 1,
+          grupo: {
+            nome: groupName,
+            participantes: allParticipantsForBackend.map(p => ({ nome: p.name, email: p.email })),
+            criador: user?.email || ''
+          }
+        };
+
+        console.log('[handleGroupBetSubmit] Enviando aposta em grupo:', groupBetData);
+        
+        const response = await httpService.post('/bets/group', groupBetData);
+        
+        if (response.data.success) {
+          const gameName = games.find(g => g.id === selectedGame)?.nome || selectedGame;
+          setSuccessMessage(`Aposta em grupo "${groupName}" (${gameName} #${contestNumber}) registrada com sucesso para ${allParticipantsForBackend.length} participantes!`);
+          
+          // Limpar o formulário após o sucesso
+          setGameNumbers('');
+          setContestNumber('');
+          setGroupName('');
+          setParticipants([]);
+          setNewParticipantName('');
+          setNewParticipantEmail('');
+          setSelectedNumbers([]);
+        } else {
+          setError(response.data.message || 'Erro ao registrar aposta em grupo');
+        }
       }
       
     } catch (error: any) {
@@ -312,12 +395,11 @@ const DashboardPage: React.FC = () => {
         const status = error.response.status;
         const errorData = error.response.data;
         
-        // Verificar se é erro de autenticação
         if (status === 401) {
           setError('Erro de autenticação. Por favor, faça login novamente.');
         } else if (status === 400 && errorData.message && errorData.message.includes('Participante com e-mail')) {
-          setError(errorData.message); // Exibe mensagem específica sobre participante não registrado
-        } else if (status === 403) { // Erro de permissão (usuário não premium)
+          setError(errorData.message);
+        } else if (status === 403) {
           setError(errorData.message || 'Você não tem permissão para criar bolões. Apenas usuários premium podem fazê-lo.');
         }
         else if (status === 500 && errorData.error && errorData.error.includes('PERMISSION_DENIED')) {
