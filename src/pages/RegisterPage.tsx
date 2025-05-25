@@ -13,7 +13,7 @@ const RegisterPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { register } = useAuth();
+  const { register, login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,10 +37,20 @@ const RegisterPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const result = await register(email, password);
+      const result = await register(email, password, {
+        role: 'common',
+        is_premium: false
+      });
 
       if (result.success) {
-        navigate('/login', { state: { message: 'Cadastro realizado com sucesso! Faça login para continuar.' } });
+        // Login automático após registro
+        const loginResult = await login(email, password);
+        if (loginResult.success) {
+          navigate('/dashboard'); // ou a rota que desejar
+        } else {
+          setError('Cadastro realizado, mas houve erro ao fazer login automático.');
+          navigate('/login', { state: { message: 'Cadastro realizado com sucesso! Faça login para continuar.' } });
+        }
       } else {
         setError(result.message || 'Erro ao realizar cadastro');
       }

@@ -23,7 +23,11 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  register: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (
+    email: string,
+    password: string,
+    extra?: { role?: string; is_premium?: boolean }
+  ) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   refreshToken: () => Promise<boolean>;
@@ -208,36 +212,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Registro via Firebase
-  const register = async (email: string, password: string) => {
+  const register = async (
+  email: string,
+  password: string,
+  extra?: { role?: string; is_premium?: boolean }
+  ) => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Criar usuário no Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-      
-      console.log('Registro bem-sucedido:', firebaseUser.uid);
-      
-      // Obter token
-      await updateAuthToken(firebaseUser);
-      
-      return { success: true };
+
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          role: extra?.role ?? 'common',
+          is_premium: extra?.is_premium ?? false
+        })
+      });
+
+      let data: any = {};
+      let text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { success: false, message: 'Resposta inválida do servidor: ' + text };
+      }
+
+      if (data.success) {
+        return { success: true };
+      } else {
+        setError(data.message || 'Erro ao realizar cadastro');
+        return { success: false, message: data.message };
+      }
     } catch (error: any) {
       console.error('Erro no registro:', error);
-      
-      // Traduzir mensagens de erro do Firebase
-      let message = 'Erro ao realizar cadastro';
-      if (error.code === 'auth/email-already-in-use') {
-        message = 'Este e-mail já está sendo utilizado';
-      } else if (error.code === 'auth/weak-password') {
-        message = 'A senha deve ter pelo menos 6 caracteres';
-      } else if (error.code === 'auth/invalid-email') {
-        message = 'E-mail inválido';
-      }
-      
-      setError(message);
-      return { success: false, message };
+      setError('Erro ao realizar cadastro');
+      return { success: false, message: 'Erro ao realizar cadastro' };
     } finally {
       setLoading(false);
     }

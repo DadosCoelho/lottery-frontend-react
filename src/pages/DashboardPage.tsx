@@ -389,7 +389,9 @@ const DashboardPage: React.FC = () => {
               <User size={24} className="text-blue-600" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">Perfil do Usuário</h3>
+              <h3 className="text-xl font-semibold text-gray-900">
+                {user?.profile?.nome || user?.email || "Perfil do Usuário"}
+              </h3>
               <p className="text-gray-500 text-sm">Suas informações</p>
             </div>
           </div>
@@ -505,7 +507,7 @@ const DashboardPage: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Resumo e informações extras */}
+      {/* Resumo e informações extras
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -533,7 +535,7 @@ const DashboardPage: React.FC = () => {
             </p>
           </div>
         </div>
-      </motion.div>
+      </motion.div>*/}
 
       {/* Modal de Aposta Simples */}
       <AnimatePresence>
