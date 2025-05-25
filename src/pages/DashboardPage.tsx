@@ -248,8 +248,8 @@ const DashboardPage: React.FC = () => {
           allParticipantsForBackend.push({ id: user?.uid || 'temp', name: creatorName || '', email: creatorEmail });
       }
 
-      if (allParticipantsForBackend.length < 2) {
-        setError('Adicione pelo menos 2 participantes (incluindo você) para formar um grupo.');
+      if (allParticipantsForBackend.length < 1) {
+        setError('Adicione pelo menos 1 participantes (incluindo você) para formar um grupo.');
         setLoading(false);
         return;
       }
