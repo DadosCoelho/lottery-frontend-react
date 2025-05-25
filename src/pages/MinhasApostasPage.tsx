@@ -75,7 +75,7 @@ const MinhasApostasPage: React.FC = () => {
     loadGames();
   }, []);
 
-  // Buscar apostas (REMOVIDO: Simulação de status)
+  // Buscar apostas
   useEffect(() => {
     const fetchBets = async () => {
       setLoading(true);
@@ -136,12 +136,6 @@ const MinhasApostasPage: React.FC = () => {
 
     fetchBets();
   }, []);
-
-  // REMOVIDO: checkResultsForBets não é mais necessária
-  // REMOVIDO: simularResultado não é mais necessária
-  // REMOVIDO: updateBetStatus (a que simulava persistência) não é mais necessária
-  // REMOVIDO: getMatchCount (frontend) não é mais necessária para determinar status
-  // REMOVIDO: isWinningBet (frontend) não é mais necessária para determinar status
 
   // Aplicar filtros quando mudarem
   useEffect(() => {
@@ -379,10 +373,6 @@ const MinhasApostasPage: React.FC = () => {
       setBetResult(fetchedResultData);
       setLoadingResult(false);
 
-      // A lógica de `getMatchCount` e `isWinningBet` não é mais necessária aqui no frontend
-      // porque o backend já determinou o status e o enviou.
-      // A função `updateBetStatus` abaixo pode ser simplificada ou removida se não for mais usada para persistência.
-      // Por enquanto, vamos mantê-la para atualizar o estado local da UI.
       updateBetStatusLocal(bet.id, newBetStatus); // Chama uma função para atualizar o status localmente
       
     } catch (error: any) {

@@ -336,6 +336,33 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const gameConfigs: Record<string, { min: number; max: number; range: number }> = {
+    megasena: { min: 6, max: 15, range: 60 },
+    lotofacil: { min: 15, max: 20, range: 25 },
+    quina: { min: 5, max: 15, range: 80 },
+    // Adicione outras modalidades conforme necessário
+  };
+  const currentConfig = gameConfigs[selectedGame] || { min: 6, max: 15, range: 60 };
+
+  const [selectedNumbers, setSelectedNumbers] = React.useState<number[]>([]);
+
+  React.useEffect(() => {
+    setGameNumbers(selectedNumbers.map(n => n.toString().padStart(2, '0')).join(','));
+  }, [selectedNumbers]);
+
+  React.useEffect(() => {
+    // Limpa números ao trocar de modalidade
+    setSelectedNumbers([]);
+  }, [selectedGame]);
+
+  const toggleNumber = (num: number) => {
+    if (selectedNumbers.includes(num)) {
+      setSelectedNumbers(selectedNumbers.filter(n => n !== num));
+    } else if (selectedNumbers.length < currentConfig.max) {
+      setSelectedNumbers([...selectedNumbers, num]);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-12 mt-16">
       <motion.div
@@ -344,8 +371,8 @@ const DashboardPage: React.FC = () => {
         transition={{ duration: 0.5 }}
         className="text-center mb-8"
       >
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Bem-vindo ao Sistema de Loterias</h1>
-        <p className="text-gray-600">Consulte resultados e estatísticas de todas as loterias</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Bem-vindo ao ConfLoto</h1>
+        <p className="text-gray-600">Consulte resultados de todas as loterias</p>
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -604,21 +631,46 @@ const DashboardPage: React.FC = () => {
 
                   {/* Números do Jogo */}
                   <div>
-                    <label htmlFor="gameNumbers" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Números do Jogo
                     </label>
-                    <input
-                      id="gameNumbers"
-                      type="text"
-                      className="input"
-                      placeholder="Ex: 01,05,12,24,37,45"
-                      value={gameNumbers}
-                      onChange={(e) => setGameNumbers(e.target.value)}
-                      required
-                    />
+                    <div className="mb-2">
+                      <div className="h-[200px] overflow-y-auto">
+                        <div className="grid grid-cols-5 gap-2">
+                          {Array.from({ length: currentConfig.range }, (_, i) => i + 1).map(num => (
+                            <button
+                              type="button"
+                              key={num}
+                              className={`rounded-full w-10 h-10 flex items-center justify-center font-bold transition
+                                ${selectedNumbers.includes(num)
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-gray-200 text-gray-700'}
+                                ${selectedNumbers.length >= currentConfig.max && !selectedNumbers.includes(num)
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : ''}
+                              `}
+                              onClick={() => toggleNumber(num)}
+                              disabled={selectedNumbers.length >= currentConfig.max && !selectedNumbers.includes(num)}
+                            >
+                              {num.toString().padStart(2, '0')}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Digite os números separados por vírgula
+                      Selecione de {currentConfig.min} a {currentConfig.max} números para este jogo.
                     </p>
+                    {selectedNumbers.length > 0 && (
+                      <p className="text-xs text-gray-700 mt-1">
+                        Selecionados: {selectedNumbers.map(n => n.toString().padStart(2, '0')).join(', ')}
+                      </p>
+                    )}
+                    {selectedNumbers.length < currentConfig.min && (
+                      <p className="text-xs text-red-500 mt-1">
+                        Selecione pelo menos {currentConfig.min} números.
+                      </p>
+                    )}
                   </div>
 
                   {/* Teimosinha */}
@@ -652,7 +704,7 @@ const DashboardPage: React.FC = () => {
                         value={teimosinhaCount}
                         onChange={(e) => setTeimosinhaCount(e.target.value)}
                       >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                        {[2, 3, 4, 6, 8, 9, 12, 18, 24].map((num) => (
                           <option key={num} value={num}>
                             {num}
                           </option>
@@ -813,21 +865,46 @@ const DashboardPage: React.FC = () => {
 
                   {/* Números do Jogo */}
                   <div>
-                    <label htmlFor="gameNumbers" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Números do Jogo
                     </label>
-                    <input
-                      id="gameNumbers"
-                      type="text"
-                      className="input"
-                      placeholder="Ex: 01,05,12,24,37,45"
-                      value={gameNumbers}
-                      onChange={(e) => setGameNumbers(e.target.value)}
-                      required
-                    />
+                    <div className="mb-2">
+                      <div className="h-[200px] overflow-y-auto">
+                        <div className="grid grid-cols-5 gap-2">
+                          {Array.from({ length: currentConfig.range }, (_, i) => i + 1).map(num => (
+                            <button
+                              type="button"
+                              key={num}
+                              className={`rounded-full w-10 h-10 flex items-center justify-center font-bold transition
+                                ${selectedNumbers.includes(num)
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-gray-200 text-gray-700'}
+                                ${selectedNumbers.length >= currentConfig.max && !selectedNumbers.includes(num)
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : ''}
+                              `}
+                              onClick={() => toggleNumber(num)}
+                              disabled={selectedNumbers.length >= currentConfig.max && !selectedNumbers.includes(num)}
+                            >
+                              {num.toString().padStart(2, '0')}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Digite os números separados por vírgula
+                      Selecione de {currentConfig.min} a {currentConfig.max} números para este jogo.
                     </p>
+                    {selectedNumbers.length > 0 && (
+                      <p className="text-xs text-gray-700 mt-1">
+                        Selecionados: {selectedNumbers.map(n => n.toString().padStart(2, '0')).join(', ')}
+                      </p>
+                    )}
+                    {selectedNumbers.length < currentConfig.min && (
+                      <p className="text-xs text-red-500 mt-1">
+                        Selecione pelo menos {currentConfig.min} números.
+                      </p>
+                    )}
                   </div>
 
                   {/* Teimosinha */}
