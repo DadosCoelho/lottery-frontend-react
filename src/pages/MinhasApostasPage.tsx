@@ -83,15 +83,42 @@ const MinhasApostasPage: React.FC = () => {
         const response = await httpService.get('/bets');
 
         if (response.data.success) {
-          const betData: Bet[] = response.data.bets; // Tipagem explícita
-          
-          // REMOVIDO: A chamada a checkResultsForBets(betData)
-          // O status virá correto do banco de dados agora
+          const betData: Bet[] = response.data.bets;
           setBets(betData);
           setFilteredBets(betData);
 
           const concursos = [...new Set(betData.map((bet: Bet) => bet.concurso))];
           setUniqueConcursos(concursos as string[]);
+
+          // Atualizar status das apostas não consultadas
+          const betsToUpdate = betData.filter(bet => !bet.consultado);
+          if (betsToUpdate.length > 0) {
+            await Promise.all(
+              betsToUpdate.map(async (bet) => {
+                try {
+                  const res = await httpService.get(`/bets/check-and-save-result/${bet.id}`);
+                  if (res.data.success && res.data.result) {
+                    setBets(prev =>
+                      prev.map(b =>
+                        b.id === bet.id
+                          ? {
+                              ...b,
+                              consultado: true,
+                              resultadoSorteio: res.data.result,
+                              status: res.data.status,
+                              verificadoEm: new Date().toISOString(),
+                            }
+                          : b
+                      )
+                    );
+                  }
+                } catch (e) {
+                  // Silencie erros individuais para não travar a tela
+                  console.error(`Erro ao atualizar aposta ${bet.id}:`, e);
+                }
+              })
+            );
+          }
         } else {
           setError(response.data.message || 'Erro ao carregar apostas');
         }
