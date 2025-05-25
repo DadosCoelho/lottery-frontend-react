@@ -40,7 +40,9 @@ const LoginPage: React.FC = () => {
       const result = await login(email, password);
       if (result.success) {
         const origin = location.state?.from?.pathname || '/';
+        setLoading(false); // <- Pare a animação antes de navegar
         navigate(origin);
+        return; // <- Impede execução após navegação
       } else {
         setError(result.message || 'Erro ao realizar login');
       }
